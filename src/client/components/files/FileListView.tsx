@@ -173,9 +173,11 @@ export function FileListView({ files }: FileListViewProps) {
       {/* Header */}
       <div className="flex items-center gap-4 px-3 py-2 border-b border-border text-xs font-medium text-content-tertiary uppercase tracking-wider">
         {isMobile && <div className="w-8 flex-shrink-0" />}
-        <div className="flex-1 min-w-0">Name</div>
-        <div className="w-24 text-right hidden sm:block">Size</div>
-        <div className="w-40 text-right hidden md:block">Modified</div>
+        <div className="flex-1 min-w-0 select-none">Name</div>
+        <div className="w-24 text-right hidden sm:block select-none">Size</div>
+        <div className="w-40 text-right hidden md:block select-none">
+          Modified
+        </div>
       </div>
 
       {/* File list */}

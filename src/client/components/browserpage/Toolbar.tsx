@@ -35,7 +35,7 @@ export function Toolbar() {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 py-2 border-b border-border bg-surface-secondary flex-shrink-0 transition-all">
       {/* Breadcrumb navigation */}
-      <div className="flex-1 min-w-0 w-full">
+      <div className="flex-1 min-w-0 w-full max-sm:border-b max-sm:border-border max-sm:pb-2">
         <Breadcrumb />
       </div>
 

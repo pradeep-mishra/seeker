@@ -40,11 +40,7 @@ export function GetInfoDialog() {
   const fileName = path ? getFileName(path) : "";
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onClose={closeGetInfoDialog}
-      title="Get Info"
-      size="md">
+    <Dialog isOpen={isOpen} onClose={closeGetInfoDialog} title="Info" size="md">
       <div className="space-y-6">
         <div className="flex flex-col items-center justify-center pb-4 border-b border-border">
           <div className="w-16 h-16 bg-surface-secondary rounded-xl flex items-center justify-center mb-3">

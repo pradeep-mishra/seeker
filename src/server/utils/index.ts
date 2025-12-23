@@ -1,13 +1,12 @@
 // src/server/utils/index.ts
-import { randomBytes } from "crypto";
-
 /**
- * Generate a unique ID using crypto random bytes
+ * Generate a unique ID using Web Crypto API
  * Returns a URL-safe base64 string
  */
 export function generateId(length: number = 21): string {
-  const bytes = randomBytes(Math.ceil((length * 3) / 4));
-  return bytes
+  const bytes = new Uint8Array(Math.ceil((length * 3) / 4));
+  crypto.getRandomValues(bytes);
+  return Buffer.from(bytes)
     .toString("base64")
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
@@ -118,7 +117,7 @@ export function getMimeType(filename: string): string {
     exe: "application/x-msdownload",
     dmg: "application/x-apple-diskimage",
     iso: "application/x-iso9660-image",
-    apk: "application/vnd.android.package-archive",
+    apk: "application/vnd.android.package-archive"
   };
 
   return mimeTypes[ext] || "application/octet-stream";

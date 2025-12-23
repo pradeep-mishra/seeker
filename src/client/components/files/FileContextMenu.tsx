@@ -303,6 +303,11 @@ export function FileContextMenu() {
               Add to Bookmarks
             </button>
           )}
+
+          <button onClick={handleGetInfo} className="context-menu-item">
+            <Info className="h-4 w-4" />
+            Get Info
+          </button>
         </>
       )}
 

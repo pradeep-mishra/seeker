@@ -1,10 +1,14 @@
 // src/server/routes/files.ts
 import { Elysia, t } from "elysia";
-import { writeFile } from "fs/promises";
 import { basename, join } from "path";
 import type { User } from "../db/schema";
 import { requireAuth } from "../middleware/auth";
-import { fileService, recentService, thumbnailService } from "../services";
+import {
+  fileService,
+  recentService,
+  settingsService,
+  thumbnailService
+} from "../services";
 import { generateId } from "../utils";
 
 /**
@@ -28,7 +32,7 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
         limit = "50",
         sortBy = "name",
         sortOrder = "asc",
-        showHidden = "true",
+        showHidden,
         search
       } = query;
 
@@ -38,12 +42,23 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
       }
 
       try {
+        // Get user's showHiddenFiles setting if showHidden is not provided
+        let showHiddenValue: boolean;
+        if (showHidden !== undefined) {
+          // Query parameter overrides setting
+          showHiddenValue = showHidden === "true";
+        } else {
+          // Use user's setting from database
+          const settings = await settingsService.getAllSettings();
+          showHiddenValue = settings.showHiddenFiles;
+        }
+
         const result = await fileService.listDirectory(path, {
           page: parseInt(page, 10),
           limit: parseInt(limit, 10),
           sortBy: sortBy as "name" | "date" | "size" | "type",
           sortOrder: sortOrder as "asc" | "desc",
-          showHidden: showHidden === "true",
+          showHidden: showHiddenValue,
           search: search || undefined
         });
 
@@ -78,13 +93,7 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
   .get(
     "/search",
     async ({ query, set }) => {
-      const {
-        path,
-        q,
-        recursive = "false",
-        showHidden = "true",
-        limit = "100"
-      } = query;
+      const { path, q, recursive = "false", showHidden, limit = "100" } = query;
 
       if (!path || !q) {
         set.status = 400;
@@ -92,9 +101,20 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
       }
 
       try {
+        // Get user's showHiddenFiles setting if showHidden is not provided
+        let showHiddenValue: boolean;
+        if (showHidden !== undefined) {
+          // Query parameter overrides setting
+          showHiddenValue = showHidden === "true";
+        } else {
+          // Use user's setting from database
+          const settings = await settingsService.getAllSettings();
+          showHiddenValue = settings.showHiddenFiles;
+        }
+
         const results = await fileService.searchFiles(path, q, {
           recursive: recursive === "true",
-          showHidden: showHidden === "true",
+          showHidden: showHiddenValue,
           limit: parseInt(limit, 10)
         });
 
@@ -129,7 +149,7 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
         return { error: "Path is required" };
       }
 
-      const stats = await fileService.getStats(path);
+      const stats = await fileService.getStats(path, true);
 
       if (!stats) {
         set.status = 404;
@@ -140,7 +160,8 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
     },
     {
       query: t.Object({
-        path: t.String()
+        path: t.String(),
+        calculateSize: t.Optional(t.String())
       })
     }
   )
@@ -461,12 +482,12 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
             const uniqueName = `${nameWithoutExt}_${generateId(6)}${ext}`;
             const uniquePath = join(path, uniqueName);
 
-            const buffer = await file.arrayBuffer();
-            await writeFile(uniquePath, Buffer.from(buffer));
+            // Use Bun.write() - faster than fs.writeFile, accepts File directly
+            await Bun.write(uniquePath, file);
             results.push({ name: uniqueName, success: true });
           } else {
-            const buffer = await file.arrayBuffer();
-            await writeFile(filePath, Buffer.from(buffer));
+            // Use Bun.write() - faster than fs.writeFile, accepts File directly
+            await Bun.write(filePath, file);
             results.push({ name: file.name, success: true });
           }
         } catch (error) {

@@ -87,9 +87,10 @@ function createApp(): Elysia {
       // SPA fallback - serve index.html for all non-API routes
       app.get("*", async ({ set }) => {
         const indexPath = join(clientDistPath, "index.html");
-        if (existsSync(indexPath)) {
+        const file = Bun.file(indexPath);
+        if (await file.exists()) {
           set.headers["Content-Type"] = "text/html";
-          return Bun.file(indexPath);
+          return file;
         }
         set.status = 404;
         return "Not Found";

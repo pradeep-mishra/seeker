@@ -1,9 +1,8 @@
 // src/server/services/thumbnailService.ts
-import sharp from "sharp";
-import { stat } from "fs/promises";
-import { thumbDb, thumbSchema } from "../db";
 import { eq } from "drizzle-orm";
-import { getMimeType, isImage } from "../utils";
+import sharp from "sharp";
+import { thumbDb, thumbSchema } from "../db";
+import { getMimeType } from "../utils";
 import { fileService } from "./fileService";
 
 const { thumbnails } = thumbSchema;
@@ -16,7 +15,7 @@ const THUMBNAIL_CONFIG = {
   height: 200,
   fit: "cover" as const,
   format: "webp" as const,
-  quality: 80,
+  quality: 80
 };
 
 /**
@@ -28,7 +27,7 @@ const SUPPORTED_FORMATS = new Set([
   "image/webp",
   "image/gif",
   "image/bmp",
-  "image/tiff",
+  "image/tiff"
 ]);
 
 /**
@@ -57,12 +56,11 @@ export class ThumbnailService {
     }
 
     // Check if file exists and get its modification time
-    let fileStat;
-    try {
-      fileStat = await stat(filePath);
-    } catch {
+    const file = Bun.file(filePath);
+    if (!(await file.exists())) {
       return null;
     }
+    const mtime = new Date(file.lastModified);
 
     // Check if it's a supported image format
     const mimeType = getMimeType(filePath);
@@ -71,7 +69,7 @@ export class ThumbnailService {
     }
 
     // Check cache
-    const cached = await this.getCachedThumbnail(filePath, fileStat.mtime);
+    const cached = await this.getCachedThumbnail(filePath, mtime);
     if (cached) {
       return cached;
     }
@@ -81,7 +79,7 @@ export class ThumbnailService {
       const thumbnail = await this.generateThumbnail(filePath);
       if (thumbnail) {
         // Cache it
-        await this.cacheThumbnail(filePath, thumbnail.data, fileStat.mtime);
+        await this.cacheThumbnail(filePath, thumbnail.data, mtime);
         return thumbnail;
       }
     } catch (error) {
@@ -120,7 +118,7 @@ export class ThumbnailService {
 
       return {
         data: cached.data,
-        mimeType: cached.mimeType,
+        mimeType: cached.mimeType
       };
     } catch (error) {
       console.error("Error getting cached thumbnail:", error);
@@ -145,14 +143,14 @@ export class ThumbnailService {
       const thumbnail = await image
         .resize(THUMBNAIL_CONFIG.width, THUMBNAIL_CONFIG.height, {
           fit: THUMBNAIL_CONFIG.fit,
-          position: "center",
+          position: "center"
         })
         .webp({ quality: THUMBNAIL_CONFIG.quality })
         .toBuffer();
 
       return {
         data: thumbnail,
-        mimeType: "image/webp",
+        mimeType: "image/webp"
       };
     } catch (error) {
       console.error(`Error generating thumbnail: ${error}`);
@@ -180,7 +178,7 @@ export class ThumbnailService {
         width: THUMBNAIL_CONFIG.width,
         height: THUMBNAIL_CONFIG.height,
         sourceModified,
-        createdAt: new Date(),
+        createdAt: new Date()
       });
     } catch (error) {
       console.error("Error caching thumbnail:", error);
@@ -204,12 +202,16 @@ export class ThumbnailService {
   async deleteCachedThumbnailsForPath(basePath: string): Promise<number> {
     try {
       // Delete all thumbnails where path starts with basePath
-      const allThumbnails = await thumbDb.select({ path: thumbnails.path }).from(thumbnails);
+      const allThumbnails = await thumbDb
+        .select({ path: thumbnails.path })
+        .from(thumbnails);
 
       let deleted = 0;
       for (const thumb of allThumbnails) {
         if (thumb.path.startsWith(basePath)) {
-          await thumbDb.delete(thumbnails).where(eq(thumbnails.path, thumb.path));
+          await thumbDb
+            .delete(thumbnails)
+            .where(eq(thumbnails.path, thumb.path));
           deleted++;
         }
       }
@@ -226,13 +228,17 @@ export class ThumbnailService {
    */
   async cleanupOrphanedThumbnails(): Promise<number> {
     try {
-      const allThumbnails = await thumbDb.select({ path: thumbnails.path }).from(thumbnails);
+      const allThumbnails = await thumbDb
+        .select({ path: thumbnails.path })
+        .from(thumbnails);
 
       let deleted = 0;
       for (const thumb of allThumbnails) {
         const exists = await fileService.exists(thumb.path);
         if (!exists) {
-          await thumbDb.delete(thumbnails).where(eq(thumbnails.path, thumb.path));
+          await thumbDb
+            .delete(thumbnails)
+            .where(eq(thumbnails.path, thumb.path));
           deleted++;
         }
       }
@@ -262,7 +268,7 @@ export class ThumbnailService {
 
       return {
         count: allThumbnails.length,
-        totalSize,
+        totalSize
       };
     } catch (error) {
       console.error("Error getting cache stats:", error);
@@ -275,7 +281,9 @@ export class ThumbnailService {
    */
   async clearCache(): Promise<number> {
     try {
-      const allThumbnails = await thumbDb.select({ path: thumbnails.path }).from(thumbnails);
+      const allThumbnails = await thumbDb
+        .select({ path: thumbnails.path })
+        .from(thumbnails);
       const count = allThumbnails.length;
 
       for (const thumb of allThumbnails) {

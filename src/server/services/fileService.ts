@@ -1,5 +1,6 @@
 // src/server/services/fileService.ts
-import { constants, createReadStream } from "fs";
+import { $ } from "bun";
+import { constants } from "fs";
 import {
   access,
   copyFile,
@@ -7,8 +8,7 @@ import {
   readdir,
   rename,
   rm,
-  stat,
-  writeFile
+  stat
 } from "fs/promises";
 import { basename, dirname, extname, join } from "path";
 import { db, schema } from "../db";
@@ -424,17 +424,14 @@ export class FileService {
   }
 
   /**
-   * Calculate folder size recursively using native du command
+   * Calculate folder size recursively using Bun's native shell
    * Falls back to recursive node traversal if du fails
    */
   async getFolderSize(path: string): Promise<number> {
     try {
-      // Use du -sk (size in kilobytes) for cross-platform compatibility (Linux/macOS)
-      // -s: summary (total only)
-      // -k: kilobyte blocks
-      const { stdout } = await execAsync(`du -sk "${path}"`);
-      // Output format is typically: "12345   /path/to/file"
-      const match = stdout.match(/^(\d+)/);
+      // Use Bun's native shell with du -sk for cross-platform compatibility
+      const output = await $`du -sk ${path}`.text();
+      const match = output.match(/^(\d+)/);
       if (match) {
         return parseInt(match[1], 10) * 1024; // Convert KB to bytes
       }
@@ -463,23 +460,22 @@ export class FileService {
 
   /**
    * Get recursive stats (size, file count, folder count)
+   * Uses Bun's native shell API for better performance
    */
   async getRecursiveStats(
     path: string
   ): Promise<{ size: number; fileCount: number; folderCount: number }> {
     try {
+      // Use Bun's native shell API for parallel execution
       const [sizeOut, filesOut, foldersOut] = await Promise.all([
-        execAsync(`du -sk "${path}"`),
-        execAsync(`find "${path}" -type f | wc -l`),
-        execAsync(`find "${path}" -type d | wc -l`)
+        $`du -sk ${path}`.text(),
+        $`find ${path} -type f | wc -l`.text(),
+        $`find ${path} -type d | wc -l`.text()
       ]);
 
-      const size = parseInt(sizeOut.stdout.split(/\s+/)[0], 10) * 1024;
-      const fileCount = parseInt(filesOut.stdout.trim(), 10);
-      const folderCount = Math.max(
-        0,
-        parseInt(foldersOut.stdout.trim(), 10) - 1
-      );
+      const size = parseInt(sizeOut.split(/\s+/)[0], 10) * 1024;
+      const fileCount = parseInt(filesOut.trim(), 10);
+      const folderCount = Math.max(0, parseInt(foldersOut.trim(), 10) - 1);
 
       return { size, fileCount, folderCount };
     } catch (error) {
@@ -582,15 +578,18 @@ export class FileService {
     }
 
     try {
-      // Create empty file (writeFile with empty content)
-      await writeFile(newPath, "", { flag: "wx" }); // 'wx' flag fails if file exists
+      // Check if file already exists (equivalent to 'wx' flag)
+      const exists = await this.exists(newPath);
+      if (exists) {
+        return { success: false, error: "File already exists" };
+      }
+
+      // Use Bun.write() - faster than fs.writeFile for creating empty files
+      await Bun.write(newPath, "");
       // Invalidate cache for parent directory
       this.directoryCache.delete(parentPath);
       return { success: true, path: newPath };
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "EEXIST") {
-        return { success: false, error: "File already exists" };
-      }
       return { success: false, error: "Failed to create file" };
     }
   }
@@ -923,9 +922,10 @@ export class FileService {
 
   /**
    * Get a readable stream for file download
+   * Uses Bun.file().stream() for better performance with Bun's optimized I/O
    */
   async getFileStream(path: string): Promise<{
-    stream: ReturnType<typeof createReadStream>;
+    stream: ReadableStream<Uint8Array>;
     stat: Awaited<ReturnType<typeof stat>>;
     mimeType: string;
   } | null> {
@@ -940,7 +940,9 @@ export class FileService {
         return null;
       }
 
-      const stream = createReadStream(path);
+      // Use Bun.file().stream() - faster than createReadStream with Bun's optimized I/O
+      const bunFile = Bun.file(path);
+      const stream = bunFile.stream();
       const mimeType = getMimeType(basename(path));
 
       return { stream, stat: fileStat, mimeType };

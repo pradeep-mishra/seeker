@@ -7,7 +7,8 @@ import {
   fileService,
   recentService,
   settingsService,
-  thumbnailService
+  thumbnailService,
+  uploadService
 } from "../services";
 import { generateId } from "../utils";
 
@@ -437,8 +438,151 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
   )
 
   /**
-   * POST /api/files/upload
-   * Upload files
+   * POST /api/files/upload/init
+   * Initialize a chunked upload
+   */
+  .post(
+    "/upload/init",
+    async ({ body, set }) => {
+      const { path, filename, totalChunks } = body;
+
+      if (!path || !filename || totalChunks === undefined) {
+        set.status = 400;
+        return { error: "Path, filename, and totalChunks are required" };
+      }
+
+      // Validate destination path permissions early
+      const validation = await fileService.validatePath(path);
+      if (!validation.valid) {
+        set.status = 403;
+        return { error: validation.error };
+      }
+
+      try {
+        const result = await uploadService.initUpload(
+          path,
+          filename,
+          totalChunks
+        );
+        return { success: true, uploadId: result.uploadId };
+      } catch (error) {
+        set.status = 500;
+        return { error: (error as Error).message };
+      }
+    },
+    {
+      body: t.Object({
+        path: t.String(),
+        filename: t.String(),
+        totalChunks: t.Number()
+      })
+    }
+  )
+
+  /**
+   * POST /api/files/upload/chunk
+   * Upload a file chunk
+   */
+  .post(
+    "/upload/chunk",
+    async ({ body, set }) => {
+      const { uploadId, chunkIndex, chunk } = body;
+
+      if (!uploadId || chunkIndex === undefined || !chunk) {
+        set.status = 400;
+        return { error: "Upload ID, chunk index, and chunk data are required" };
+      }
+
+      try {
+        await uploadService.saveChunk(uploadId, chunkIndex, chunk);
+        return { success: true };
+      } catch (error) {
+        set.status = 500;
+        return { error: (error as Error).message };
+      }
+    },
+    {
+      body: t.Object({
+        uploadId: t.String(),
+        chunkIndex: t.Numeric(),
+        chunk: t.File()
+      })
+    }
+  )
+
+  /**
+   * POST /api/files/upload/finalize
+   * Finalize a chunked upload
+   */
+  .post(
+    "/upload/finalize",
+    async ({ body, set }) => {
+      const { uploadId, path, filename } = body;
+
+      if (!uploadId || !path || !filename) {
+        set.status = 400;
+        return { error: "Upload ID, path, and filename are required" };
+      }
+
+      try {
+        const result = await uploadService.finalizeUpload(
+          uploadId,
+          path,
+          filename
+        );
+
+        if (!result.success) {
+          set.status = 400;
+          return { error: result.error };
+        }
+
+        return result;
+      } catch (error) {
+        set.status = 500;
+        return { error: (error as Error).message };
+      }
+    },
+    {
+      body: t.Object({
+        uploadId: t.String(),
+        path: t.String(),
+        filename: t.String()
+      })
+    }
+  )
+
+  /**
+   * POST /api/files/upload/cancel
+   * Cancel an active upload
+   */
+  .post(
+    "/upload/cancel",
+    async ({ body, set }) => {
+      const { uploadId } = body;
+
+      if (!uploadId) {
+        set.status = 400;
+        return { error: "Upload ID is required" };
+      }
+
+      try {
+        await uploadService.cancelUpload(uploadId);
+        return { success: true };
+      } catch (error) {
+        set.status = 500;
+        return { error: (error as Error).message };
+      }
+    },
+    {
+      body: t.Object({
+        uploadId: t.String()
+      })
+    }
+  )
+
+  /**
+   * POST /api/files/upload (Legacy/Simple)
+   * Upload files (small files)
    */
   .post(
     "/upload",

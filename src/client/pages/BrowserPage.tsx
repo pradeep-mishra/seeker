@@ -1,8 +1,10 @@
 // src/client/pages/BrowserPage.tsx
+import { FolderUp } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   EmptyStates,
   FileListContainer,
+  MultiSelectActionBar,
   SelectionBox,
   Toolbar,
   WarningBanner
@@ -14,6 +16,7 @@ import { GetInfoDialog } from "../components/dialogs/GetInfoDialog";
 import { RenameDialog } from "../components/dialogs/RenameDialog";
 import { FileContextMenu } from "../components/files/FileContextMenu";
 import { mountsApi, type Mount } from "../lib/api";
+import { useFileUpload } from "../lib/useFileUpload";
 import { useAuthStore } from "../stores/authStore";
 import { useFileStore } from "../stores/fileStore";
 import { useSelectionStore } from "../stores/selectionStore";
@@ -40,6 +43,9 @@ export default function BrowserPage() {
 
   const [mounts, setMounts] = useState<Mount[]>([]);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const dragDepthRef = useRef(0);
+  const { uploadFiles } = useFileUpload();
 
   // Ref for infinite scroll observer
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
@@ -217,6 +223,17 @@ export default function BrowserPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [clearSelection]);
 
+  // Handle drag end to reset state if user cancels drag
+  useEffect(() => {
+    const handleDragEnd = () => {
+      dragDepthRef.current = 0;
+      setIsDraggingOver(false);
+    };
+
+    window.addEventListener("dragend", handleDragEnd);
+    return () => window.removeEventListener("dragend", handleDragEnd);
+  }, []);
+
   // Handle click on empty area to deselect
   const handleBackgroundClick = (e: React.MouseEvent) => {
     if (isDraggingRef.current) return;
@@ -229,6 +246,53 @@ export default function BrowserPage() {
   const handleBackgroundContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     useUIStore.getState().openContextMenu(e.clientX, e.clientY, "background");
+  };
+
+  // Handle drag and drop file upload
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Only show drop zone if dragging files from outside
+    if (e.dataTransfer.types.includes("Files")) {
+      dragDepthRef.current++;
+      setIsDraggingOver(true);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Set the dropEffect to copy
+    if (e.dataTransfer.types.includes("Files")) {
+      e.dataTransfer.dropEffect = "copy";
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Track nested drag events with counter
+    if (e.dataTransfer.types.includes("Files")) {
+      dragDepthRef.current--;
+      if (dragDepthRef.current === 0) {
+        setIsDraggingOver(false);
+      }
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current = 0;
+    setIsDraggingOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+
+    await uploadFiles(files);
   };
 
   // Render loading state
@@ -261,7 +325,13 @@ export default function BrowserPage() {
 
   // Render file browser
   return (
-    <div className="h-full flex flex-col" onClick={handleBackgroundClick}>
+    <div
+      className="h-full flex flex-col relative"
+      onClick={handleBackgroundClick}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}>
       {/* Toolbar */}
       <Toolbar />
 
@@ -281,8 +351,28 @@ export default function BrowserPage() {
         onCreateFolder={openCreateFolderDialog}
       />
 
+      {/* Drag and Drop Overlay */}
+      {isDraggingOver && (
+        <div className="absolute inset-0 bg-accent/10 border-2 border-dashed border-accent z-50 flex items-center justify-center pointer-events-none">
+          <div className="bg-surface rounded-lg shadow-elevated p-8 text-center">
+            <div className="text-4xl mb-4">
+              <FolderUp className="h-10 w-10 text-accent" />
+            </div>
+            <div className="text-lg font-semibold text-content mb-2">
+              Drop files to upload
+            </div>
+            <div className="text-sm text-content-secondary">
+              Files will be uploaded to {currentPath}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Selection Box */}
       {selectionBox && <SelectionBox {...selectionBox} />}
+
+      {/* Multi-select Action Bar */}
+      <MultiSelectActionBar />
 
       {/* Dialogs */}
       <CreateFolderDialog />

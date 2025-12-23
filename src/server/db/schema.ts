@@ -1,6 +1,6 @@
 // src/server/db/schema.ts
-import { sqliteTable, text, integer, blob } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 /**
  * Users table - stores user authentication and profile data
@@ -17,7 +17,7 @@ export const users = sqliteTable("users", {
     .default(sql`(unixepoch())`),
   updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .default(sql`(unixepoch())`)
 });
 
 /**
@@ -31,7 +31,7 @@ export const sessions = sqliteTable("sessions", {
   expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .default(sql`(unixepoch())`)
 });
 
 /**
@@ -43,7 +43,7 @@ export const settings = sqliteTable("settings", {
   value: text("value").notNull(), // JSON stringified values
   updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .default(sql`(unixepoch())`)
 });
 
 /**
@@ -56,7 +56,7 @@ export const mounts = sqliteTable("mounts", {
   label: text("label").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .default(sql`(unixepoch())`)
 });
 
 /**
@@ -72,7 +72,7 @@ export const bookmarks = sqliteTable("bookmarks", {
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .default(sql`(unixepoch())`)
 });
 
 /**
@@ -86,7 +86,7 @@ export const recentLocations = sqliteTable("recent_locations", {
   path: text("path").notNull(),
   accessedAt: integer("accessed_at", { mode: "timestamp" })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .default(sql`(unixepoch())`)
 });
 
 /**
@@ -102,7 +102,23 @@ export const fileMetadataCache = sqliteTable("file_metadata_cache", {
   mimeType: text("mime_type"),
   cachedAt: integer("cached_at", { mode: "timestamp" })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .default(sql`(unixepoch())`)
+});
+
+/**
+ * Active uploads table - stores direct-to-destination upload sessions
+ * Used for resuming and cleaning up abandoned partial files
+ */
+export const uploads = sqliteTable("uploads", {
+  id: text("id").primaryKey(), // The uploadId
+  filePath: text("file_path").notNull(), // Full path to the .partial file
+  originalName: text("original_name").notNull(),
+  totalChunks: integer("total_chunks").notNull(),
+  uploadedChunks: text("uploaded_chunks").notNull().default("[]"), // JSON array of chunk indices
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`)
 });
 
 // Type exports for use throughout the application
@@ -111,6 +127,9 @@ export type NewUser = typeof users.$inferInsert;
 
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
+
+export type Upload = typeof uploads.$inferSelect;
+export type NewUpload = typeof uploads.$inferInsert;
 
 export type Setting = typeof settings.$inferSelect;
 export type NewSetting = typeof settings.$inferInsert;
@@ -133,7 +152,7 @@ export const SettingsKeys = {
   SORT_BY: "sort_by",
   SORT_ORDER: "sort_order",
   SHOW_HIDDEN_FILES: "show_hidden_files",
-  THEME: "theme",
+  THEME: "theme"
 } as const;
 
 export type SettingsKey = (typeof SettingsKeys)[keyof typeof SettingsKeys];
@@ -142,7 +161,7 @@ export type SettingsKey = (typeof SettingsKeys)[keyof typeof SettingsKeys];
 export const ViewModes = {
   LIST: "list",
   THUMBNAIL: "thumbnail",
-  CARD: "card",
+  CARD: "card"
 } as const;
 
 export type ViewMode = (typeof ViewModes)[keyof typeof ViewModes];
@@ -152,14 +171,14 @@ export const SortByOptions = {
   NAME: "name",
   DATE: "date",
   SIZE: "size",
-  TYPE: "type",
+  TYPE: "type"
 } as const;
 
 export type SortBy = (typeof SortByOptions)[keyof typeof SortByOptions];
 
 export const SortOrderOptions = {
   ASC: "asc",
-  DESC: "desc",
+  DESC: "desc"
 } as const;
 
 export type SortOrder =

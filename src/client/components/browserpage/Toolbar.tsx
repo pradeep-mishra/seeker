@@ -42,14 +42,14 @@ export function Toolbar() {
       {/* Actions and count */}
       <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 w-full sm:w-auto">
         <span className="text-sm text-content-tertiary truncate">
-          {selectedPaths.size > 0 ? (
+          {/* selectedPaths.size > 0 ? (
             <>
               <span className="text-accent font-medium">
                 {selectedPaths.size} selected
               </span>
               <span className="mx-2 text-border">|</span>
             </>
-          ) : null}
+          ) : null */}
           {files.length}{" "}
           {files.length === 1 ? `item` : `items ${hasMore ? "loaded" : ""}`}
           {hasMore && (

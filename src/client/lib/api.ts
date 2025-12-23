@@ -275,22 +275,221 @@ export const filesApi = {
   delete: (paths: string[]) =>
     api.delete("files", { json: { paths } }).json<BatchOperationResult>(),
 
+  cancelUpload: (uploadId: string) =>
+    api
+      .post("files/upload/cancel", { json: { uploadId } })
+      .json<{ success: boolean }>(),
+
   upload: async (
     path: string,
     files: File[],
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
+    signal?: AbortSignal
   ): Promise<{
     success: boolean;
     results: { name: string; success: boolean; error?: string }[];
   }> => {
-    const formData = new FormData();
-    formData.append("path", path);
-    files.forEach((file) => formData.append("files", file));
+    const results: { name: string; success: boolean; error?: string }[] = [];
+    const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB chunks
+    const CONCURRENCY = 4; // 4 concurrent requests
 
-    // Note: ky doesn't support upload progress natively with fetch
-    // For progress, we'd need XMLHttpRequest or a custom implementation
-    const response = await api.post("files/upload", { body: formData });
-    return response.json();
+    // Calculate total size for global progress
+    const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+    let uploadedBytes = 0;
+
+    // Track active uploads for cancellation
+    const activeUploadIds: string[] = [];
+
+    // Register abort handler
+    if (signal) {
+      signal.addEventListener("abort", () => {
+        // We'll try to clean up active uploads on the server
+        for (const uploadId of activeUploadIds) {
+          filesApi.cancelUpload(uploadId).catch(console.error);
+        }
+      });
+    }
+
+    for (const file of files) {
+      // Check for abort before starting new file
+      if (signal?.aborted) {
+        throw new Error("Upload cancelled");
+      }
+
+      try {
+        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+        // 1. Initialize upload
+        const initResponse = await api
+          .post("files/upload/init", {
+            json: {
+              path,
+              filename: file.name,
+              totalChunks
+            },
+            signal // Pass signal to init request
+          })
+          .json<{ success: boolean; uploadId: string; error?: string }>();
+
+        if (!initResponse.success || !initResponse.uploadId) {
+          throw new Error(initResponse.error || "Failed to initialize upload");
+        }
+
+        const uploadId = initResponse.uploadId;
+        activeUploadIds.push(uploadId);
+        const chunks = Array.from({ length: totalChunks }, (_, i) => i);
+
+        // 2. Upload chunks with concurrency
+        const uploadChunk = async (chunkIndex: number) => {
+          if (signal?.aborted) throw new Error("Upload cancelled");
+
+          const start = chunkIndex * CHUNK_SIZE;
+          const end = Math.min(start + CHUNK_SIZE, file.size);
+          const chunk = file.slice(start, end);
+          let chunkUploaded = 0;
+
+          const formData = new FormData();
+          formData.append("uploadId", uploadId);
+          formData.append("chunkIndex", String(chunkIndex));
+          formData.append("chunk", chunk);
+
+          return new Promise<void>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+
+            // Handle manual abort from signal
+            const abortHandler = () => {
+              xhr.abort();
+              reject(new Error("Upload cancelled"));
+            };
+
+            if (signal) {
+              signal.addEventListener("abort", abortHandler);
+            }
+
+            // Track upload progress for this chunk
+            if (xhr.upload) {
+              xhr.upload.addEventListener("progress", (e) => {
+                if (e.lengthComputable) {
+                  const loaded = e.loaded;
+                  // Add the difference since last event to global
+                  const diff = loaded - chunkUploaded;
+                  chunkUploaded = loaded;
+                  uploadedBytes += diff;
+
+                  if (onProgress) {
+                    onProgress((uploadedBytes / totalSize) * 100);
+                  }
+                }
+              });
+            }
+
+            xhr.addEventListener("load", () => {
+              if (signal) signal.removeEventListener("abort", abortHandler);
+
+              if (xhr.status >= 200 && xhr.status < 300) {
+                // Ensure we counted exactly the full size of this chunk
+                // Correct for any minor progress event discrepancies
+                const remaining = chunk.size - chunkUploaded;
+                if (remaining !== 0) {
+                  uploadedBytes += remaining;
+                  if (onProgress) onProgress((uploadedBytes / totalSize) * 100);
+                }
+
+                resolve();
+              } else {
+                reject(new Error(`Chunk upload failed: ${xhr.statusText}`));
+              }
+            });
+
+            xhr.addEventListener("error", () => {
+              if (signal) signal.removeEventListener("abort", abortHandler);
+              reject(new Error("Network error"));
+            });
+
+            xhr.addEventListener("abort", () => {
+              if (signal) signal.removeEventListener("abort", abortHandler);
+              reject(new Error("Aborted"));
+            });
+
+            xhr.open("POST", "/api/files/upload/chunk");
+            xhr.withCredentials = true;
+            xhr.send(formData);
+          });
+        };
+
+        // Process chunks using a pool for maximum throughput
+        const pool = new Set<Promise<void>>();
+
+        for (const chunkIndex of chunks) {
+          if (signal?.aborted) break;
+
+          const p = uploadChunk(chunkIndex).then(() => {
+            pool.delete(p);
+          });
+          pool.add(p);
+
+          if (pool.size >= CONCURRENCY) {
+            await Promise.race(pool);
+          }
+        }
+
+        // Wait for remaining requests
+        await Promise.all(pool);
+
+        if (signal?.aborted) {
+          throw new Error("Upload cancelled");
+        }
+
+        // 3. Finalize upload
+        const finalizeResponse = await api
+          .post("files/upload/finalize", {
+            json: {
+              uploadId,
+              path,
+              filename: file.name
+            },
+            timeout: false, // Disable timeout for large file assembly
+            signal
+          })
+          .json<{ success: boolean; path?: string; error?: string }>();
+
+        if (!finalizeResponse.success) {
+          throw new Error(
+            finalizeResponse.error || "Failed to finalize upload"
+          );
+        }
+
+        // Remove from active list as it's done
+        const index = activeUploadIds.indexOf(uploadId);
+        if (index > -1) activeUploadIds.splice(index, 1);
+
+        results.push({ name: file.name, success: true });
+      } catch (error) {
+        if (
+          signal?.aborted ||
+          (error as Error).message === "Upload cancelled"
+        ) {
+          // Re-throw if cancelled so we stop processing files
+          throw new Error("Upload cancelled");
+        }
+
+        console.error(`Failed to upload ${file.name}:`, error);
+        results.push({
+          name: file.name,
+          success: false,
+          error: (error as Error).message
+        });
+
+        // Add remaining file size to uploadedBytes so we don't stall global progress
+        // This is an approximation
+        uploadedBytes += file.size;
+      }
+    }
+
+    return {
+      success: results.every((r) => r.success),
+      results
+    };
   }
 };
 

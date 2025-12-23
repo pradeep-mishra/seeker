@@ -1,5 +1,5 @@
 // src/client/components/layout/Sidebar.tsx
-import { Clock, HardDrive, Settings, Star, Trash2 } from "lucide-react";
+import { Clock, HardDrive, Settings, Star, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -16,17 +16,13 @@ import { useUIStore } from "../../stores/uiStore";
 
 export function Sidebar() {
   const navigate = useNavigate();
-  const {
-    isSidebarOpen,
-    openSettingsDialog,
-    mountsRefreshKey,
-    setSidebarOpen
-  } = useUIStore();
+  const { isSidebarOpen, mountsRefreshKey, setSidebarOpen } = useUIStore();
   const { navigateToPath, currentPath } = useFileStore();
   const { user } = useAuthStore();
   const {
     bookmarks,
     loadBookmarks,
+    removeBookmark,
     isLoading: bookmarksLoading
   } = useBookmarkStore();
 
@@ -111,9 +107,14 @@ export function Sidebar() {
             </h3>
             {user?.isAdmin && (
               <button
-                onClick={openSettingsDialog}
+                onClick={() => {
+                  navigate("/settings");
+                  if (window.innerWidth < 768) {
+                    setSidebarOpen(false);
+                  }
+                }}
                 className="p-1 rounded hover:bg-surface-hover transition-colors"
-                title="Manage mounts">
+                title="Settings">
                 <Settings className="h-3.5 w-3.5 text-content-tertiary" />
               </button>
             )}
@@ -145,7 +146,7 @@ export function Sidebar() {
                     <p className="font-medium truncate">{mount.label}</p>
                     {mount.stats && (
                       <div className="mt-1">
-                        <div className="h-1.5 bg-surface rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-surface rounded-full overflow-hidden border border-[#eeeeee]">
                           <div
                             className={`h-full transition-all ${
                               mount.stats.percentUsed > 90
@@ -191,17 +192,27 @@ export function Sidebar() {
           ) : (
             <div className="space-y-0.5">
               {bookmarks.map((bookmark) => (
-                <button
-                  key={bookmark.id}
-                  onClick={() => handleNavigate(bookmark.path)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors ${
-                    currentPath === bookmark.path
-                      ? "bg-accent/10 text-accent"
-                      : "hover:bg-surface-hover text-content"
-                  }`}>
-                  <Star className="h-4 w-4 text-warning shrink-0" />
-                  <span className="truncate">{bookmark.name}</span>
-                </button>
+                <div key={bookmark.id} className="relative group">
+                  <button
+                    onClick={() => handleNavigate(bookmark.path)}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors ${
+                      currentPath === bookmark.path
+                        ? "bg-accent/10 text-accent"
+                        : "group-hover:bg-surface-hover text-content"
+                    }`}>
+                    <Star className="h-4 w-4 text-warning shrink-0" />
+                    <span className="truncate pr-6">{bookmark.name}</span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeBookmark(bookmark.id);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-surface-active transition-opacity"
+                    title="Remove bookmark">
+                    <X className="h-3.5 w-3.5 text-content-tertiary hover:text-error" />
+                  </button>
+                </div>
               ))}
             </div>
           )}

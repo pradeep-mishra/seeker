@@ -129,9 +129,21 @@ export function FileContextMenu() {
 
   const handleDownload = useCallback(() => {
     const paths = getSelectedPaths();
-    paths.forEach((path) => {
-      window.open(filesApi.download(path), "_blank");
+
+    // Download files using hidden anchor tags to avoid opening new tabs
+    paths.forEach((path, index) => {
+      // Slight delay between downloads to avoid browser blocking
+      setTimeout(() => {
+        const a = document.createElement("a");
+        a.href = filesApi.download(path);
+        a.download = ""; // Hint browser to download rather than navigate
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }, index * 100); // 100ms delay between each download
     });
+
     closeContextMenu();
   }, [getSelectedPaths, closeContextMenu]);
 

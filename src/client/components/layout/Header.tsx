@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useFileUpload } from "../../lib/useFileUpload";
 import { useAuthStore } from "../../stores/authStore";
 import { useFileStore } from "../../stores/fileStore";
 import { useUIStore } from "../../stores/uiStore";
@@ -44,6 +45,8 @@ export function Header() {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadFiles } = useFileUpload();
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -196,15 +199,30 @@ export function Header() {
 
       {/* Upload button - only on browse page */}
       {isBrowsePage && (
-        <button
-          className="flex items-center gap-2 px-4 py-2 bg-accent text-content-inverse rounded-lg hover:bg-accent-hover transition-colors text-sm font-medium"
-          onClick={() => {
-            // TODO: Implement upload
-            console.log("Upload");
-          }}>
-          <Upload className="h-4 w-4" />
-          <span className="hidden sm:inline">Upload</span>
-        </button>
+        <>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              const files = Array.from(e.target.files || []);
+              if (files.length > 0) {
+                uploadFiles(files);
+              }
+              // Reset input so same file can be selected again
+              e.target.value = "";
+            }}
+          />
+          <button
+            className="flex items-center gap-2 px-4 py-2 bg-accent text-content-inverse rounded-lg hover:bg-accent-hover transition-colors text-sm font-medium"
+            onClick={() => {
+              fileInputRef.current?.click();
+            }}>
+            <Upload className="h-4 w-4" />
+            <span className="hidden sm:inline">Upload</span>
+          </button>
+        </>
       )}
 
       {/* User menu */}

@@ -315,6 +315,22 @@ body {
   animation: slideOutRight var(--transition-normal) ease-in;
 }
 
+/* Multi-select action bar animation */
+@keyframes slideUp {
+  from {
+    transform: translate(-50%, 100%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp var(--transition-normal) ease-out;
+}
+
 /* Upload progress panel */
 .upload-panel {
   position: fixed;

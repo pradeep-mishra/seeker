@@ -138,6 +138,16 @@ export async function initializeDatabase(): Promise<void> {
       cached_at INTEGER NOT NULL DEFAULT (unixepoch())
     );
 
+    CREATE TABLE IF NOT EXISTS uploads (
+      id TEXT PRIMARY KEY,
+      file_path TEXT NOT NULL,
+      original_name TEXT NOT NULL,
+      total_chunks INTEGER NOT NULL,
+      uploaded_chunks TEXT NOT NULL DEFAULT '[]',
+      expires_at INTEGER NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+
     -- Create indexes for better query performance
     CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);

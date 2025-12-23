@@ -10,7 +10,7 @@ interface BookmarkState {
   // Actions
   loadBookmarks: () => Promise<void>;
   addBookmark: (path: string, name: string) => Promise<void>;
-  removeBookmark: (id: number) => Promise<void>;
+  removeBookmark: (id: string) => Promise<void>;
 }
 
 export const useBookmarkStore = create<BookmarkState>((set, get) => ({
@@ -42,9 +42,9 @@ export const useBookmarkStore = create<BookmarkState>((set, get) => ({
     }
   },
 
-  removeBookmark: async (id: number) => {
+  removeBookmark: async (id: string) => {
     try {
-      await bookmarksApi.remove(id.toString());
+      await bookmarksApi.remove(id);
       // Reload bookmarks to get the fresh list
       await get().loadBookmarks();
     } catch (error) {

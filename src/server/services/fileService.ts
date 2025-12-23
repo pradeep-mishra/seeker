@@ -1,15 +1,7 @@
 // src/server/services/fileService.ts
 import { $ } from "bun";
 import { constants } from "fs";
-import {
-  access,
-  copyFile,
-  mkdir,
-  readdir,
-  rename,
-  rm,
-  stat
-} from "fs/promises";
+import { access, mkdir, readdir, rename, rm, stat } from "fs/promises";
 import { basename, dirname, extname, join } from "path";
 import { db, schema } from "../db";
 import type { SortBy, SortOrder } from "../db/schema";
@@ -428,8 +420,16 @@ export class FileService {
    * Falls back to recursive node traversal if du fails
    */
   async getFolderSize(path: string): Promise<number> {
+    // Validate path before using in shell command
+    const validation = await this.validatePath(path);
+    if (!validation.valid) {
+      // Return 0 if path is invalid rather than throwing
+      return 0;
+    }
+
     try {
       // Use Bun's native shell with du -sk for cross-platform compatibility
+      // Bun's $ template tag automatically escapes arguments, but we validate first for safety
       const output = await $`du -sk ${path}`.text();
       const match = output.match(/^(\d+)/);
       if (match) {
@@ -465,8 +465,15 @@ export class FileService {
   async getRecursiveStats(
     path: string
   ): Promise<{ size: number; fileCount: number; folderCount: number }> {
+    // Validate path before using in shell commands
+    const validation = await this.validatePath(path);
+    if (!validation.valid) {
+      return { size: 0, fileCount: 0, folderCount: 0 };
+    }
+
     try {
       // Use Bun's native shell API for parallel execution
+      // Bun's $ template tag automatically escapes arguments, but we validate first for safety
       const [sizeOut, filesOut, foldersOut] = await Promise.all([
         $`du -sk ${path}`.text(),
         $`find ${path} -type f | wc -l`.text(),
@@ -876,6 +883,7 @@ export class FileService {
 
   /**
    * Copy a file or directory recursively
+   * Uses Bun.write() and Bun.file() for better performance than Node.js copyFile
    */
   private async copyRecursive(
     source: string,
@@ -891,7 +899,8 @@ export class FileService {
         await this.copyRecursive(join(source, entry), join(destination, entry));
       }
     } else {
-      await copyFile(source, destination);
+      // Use Bun.write() with Bun.file() - significantly faster than Node.js copyFile
+      await Bun.write(destination, Bun.file(source));
     }
   }
 

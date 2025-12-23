@@ -2,12 +2,14 @@
 /**
  * Generate a unique ID using Web Crypto API
  * Returns a URL-safe base64 string
+ * Uses Bun's optimized base64 encoding
  */
 export function generateId(length: number = 21): string {
   const bytes = new Uint8Array(Math.ceil((length * 3) / 4));
   crypto.getRandomValues(bytes);
-  return Buffer.from(bytes)
-    .toString("base64")
+  // Use btoa with Uint8Array for better performance in Bun
+  const base64 = btoa(String.fromCharCode(...bytes));
+  return base64
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=/g, "")

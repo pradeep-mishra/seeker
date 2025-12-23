@@ -1,13 +1,11 @@
 // src/server/services/mountService.ts
-import { exec } from "child_process";
+import { $ } from "bun";
 import { eq } from "drizzle-orm";
 import { constants } from "fs";
 import { access, stat } from "fs/promises";
 import { join } from "path";
-import { promisify } from "util";
 import { db, schema } from "../db";
 import { generateId } from "../utils";
-const execAsync = promisify(exec);
 const { mounts } = schema;
 
 /**
@@ -203,16 +201,22 @@ export class MountService {
    */
   async getStorageStats(path: string): Promise<StorageStats | undefined> {
     try {
+      // Validate path is accessible before using in shell command
+      const accessible = await this.isMountAccessible(path);
+      if (!accessible) {
+        return undefined;
+      }
+
       // Use df command to get storage stats
-      const { stdout } = await execAsync(`df -B1 "${path}" | tail -1`);
-      const parts = stdout.trim().split(/\s+/);
-
+      // Bun's $ template tag automatically escapes arguments, but we validate first for safety
+      const output = await $`df -k ${path}`.text();
+      const lines = output.trim().split("\n");
+      const parts = lines[lines.length - 1].split(/\s+/);
       if (parts.length >= 4) {
-        const total = parseInt(parts[1], 10);
-        const used = parseInt(parts[2], 10);
-        const free = parseInt(parts[3], 10);
+        const total = parseInt(parts[1], 10) * 1024;
+        const used = parseInt(parts[2], 10) * 1024;
+        const free = parseInt(parts[3], 10) * 1024;
         const percentUsed = total > 0 ? Math.round((used / total) * 100) : 0;
-
         return { total, used, free, percentUsed };
       }
     } catch (error) {

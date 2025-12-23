@@ -1,0 +1,25 @@
+# Dockerfile.dev
+# Development Dockerfile for Seeker File Browser
+
+FROM oven/bun:1.2-alpine
+
+WORKDIR /app
+
+# Install development dependencies
+RUN apk add --no-cache \
+    vips-dev \
+    fftw-dev \
+    build-base \
+    python3
+
+# Copy package files
+COPY package.json bun.lock* ./
+
+# Install all dependencies (including devDependencies)
+RUN bun install
+
+# Expose ports (server + vite dev server)
+EXPOSE 3000 5173
+
+# Default command (can be overridden in docker-compose)
+CMD ["bun", "run", "dev"]

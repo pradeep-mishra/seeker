@@ -1,0 +1,50 @@
+{
+  "name": "seeker",
+  "version": "1.0.0",
+  "description": "A native-feeling web-based file browser for home servers",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run dev:server & bun run dev:client",
+    "dev:server": "bun --watch src/server/index.ts",
+    "dev:client": "vite",
+    "build": "bun run build:client && bun run build:server",
+    "build:client": "vite build",
+    "build:server": "bun build src/server/index.ts --outdir=dist/server --target=bun",
+    "start": "NODE_ENV=production bun dist/server/index.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "bun src/server/db/migrate.ts",
+    "db:studio": "drizzle-kit studio",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "^1.4.0",
+    "@elysiajs/static": "^1.4.7",
+    "@tanstack/react-virtual": "^3.13.13",
+    "drizzle-orm": "^0.45.1",
+    "elysia": "^1.4.19",
+    "ky": "^1.14.1",
+    "lucide-react": "^0.562.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.11.0",
+    "sharp": "^0.34.5",
+    "zustand": "^5.0.9"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.17",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.1.2",
+    "autoprefixer": "^10.4.21",
+    "drizzle-kit": "^0.31.4",
+    "postcss": "^8.5.5",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.8.3",
+    "vite": "^7.3.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

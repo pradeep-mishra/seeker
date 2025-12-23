@@ -1,0 +1,54 @@
+# .dockerignore
+
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+
+
+
+# Configuration (mounted as volume)
+#config
+
+# Data (mounted as volume)
+data
+
+# Sample data
+sample-data
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Test files
+coverage
+*.test.ts
+*.spec.ts
+
+# Documentation
+*.md
+!README.md
+
+# Docker files (no need to copy these into the image)
+docker-compose*.yml
+Dockerfile.dev

@@ -182,8 +182,9 @@ export function FileListView({ files }: FileListViewProps) {
 
       {/* File list */}
       <div className="divide-y divide-border min-h-0">
-        {files.map((item) => {
+        {files.map((item, index) => {
           const selected = isSelected(item.path);
+          const isEven = index % 2 === 0;
 
           return (
             <div
@@ -200,7 +201,9 @@ export function FileListView({ files }: FileListViewProps) {
                 ${
                   selected
                     ? "bg-primary-100 dark:bg-primary-900"
-                    : "hover:bg-surface-hover"
+                    : isEven
+                    ? "bg-surface hover:bg-surface-hover"
+                    : "bg-surface-secondary hover:bg-surface-hover"
                 }
               `}>
               {/* Checkbox for mobile */}

@@ -23,7 +23,6 @@ A modern, native-feeling web-based file browser for home servers. Seeker provide
 ### User Interface
 
 - **Native Feel** - Designed to feel like a desktop file manager
-- **Keyboard Shortcuts** - Full keyboard navigation support (Ctrl/Cmd+C, V, X, A, Delete, etc.)
 - **Context Menus** - Right-click context menus for quick actions
 - **Selection Modes** - Click, Ctrl+Click, Shift+Click, and lasso selection
 - **Dark/Light Theme** - Theme support with CSS variables for easy customization
@@ -233,21 +232,6 @@ Seeker uses two SQLite databases stored in the config directory:
 | ------ | --------------- | ---------------- |
 | GET    | `/api/settings` | Get all settings |
 | PATCH  | `/api/settings` | Update settings  |
-
-## Keyboard Shortcuts
-
-| Shortcut               | Action                         |
-| ---------------------- | ------------------------------ |
-| `Ctrl/⌘ + C`           | Copy selected files            |
-| `Ctrl/⌘ + X`           | Cut selected files             |
-| `Ctrl/⌘ + V`           | Paste files                    |
-| `Ctrl/⌘ + A`           | Select all                     |
-| `Delete` / `Backspace` | Delete selected                |
-| `Enter`                | Open file/folder               |
-| `F2`                   | Rename                         |
-| `Ctrl/⌘ + Shift + N`   | New folder                     |
-| `↑ ↓ ← →`              | Navigate selection             |
-| `Escape`               | Clear selection / Close dialog |
 
 ## Theming
 

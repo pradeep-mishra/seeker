@@ -2,6 +2,7 @@
 import {
   ArrowUpDown,
   ChevronDown,
+  CircleUserRound,
   FolderSearch,
   Grid,
   LayoutGrid,
@@ -11,7 +12,6 @@ import {
   Search,
   Settings,
   Upload,
-  User,
   Users
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -153,8 +153,8 @@ export function Header() {
         </div>
       )}
 
-      {/* Sort dropdown - only on browse page */}
-      {isBrowsePage && (
+      {/* Sort dropdown - only on browse page. {TODO} */}
+      {isBrowsePage && false && (
         <div className="relative" ref={sortMenuRef}>
           <button
             onClick={() => setShowSortMenu(!showSortMenu)}
@@ -215,7 +215,7 @@ export function Header() {
             }}
           />
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-accent text-content-inverse rounded-lg hover:bg-accent-hover transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-accent text-content-inverse rounded-md hover:bg-accent-hover transition-colors text-sm font-medium"
             onClick={() => {
               fileInputRef.current?.click();
             }}>
@@ -238,7 +238,10 @@ export function Header() {
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
-              <User className="h-4 w-4 text-accent" />
+              <CircleUserRound
+                className="h-7 w-7 text-accent"
+                strokeWidth={1.5}
+              />
             )}
           </div>
         </button>

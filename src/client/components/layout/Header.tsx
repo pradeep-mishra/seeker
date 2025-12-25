@@ -12,7 +12,8 @@ import {
   Search,
   Settings,
   Upload,
-  Users
+  Users,
+  X
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -34,7 +35,12 @@ export function Header() {
     toggleSortOrder,
     toggleSidebar
   } = useUIStore();
-  const { currentPath } = useFileStore();
+  const {
+    currentPath,
+    setSearchQuery: setStoreSearchQuery,
+    loadFiles,
+    clearSearch
+  } = useFileStore();
 
   // Check if we're on the browse page
   const isBrowsePage =
@@ -69,10 +75,43 @@ export function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Debounced search effect
+  useEffect(() => {
+    // Only run if we're on browse page
+    if (!isBrowsePage) return;
+
+    // Clear search if query is empty
+    if (!searchQuery.trim()) {
+      setStoreSearchQuery("");
+      loadFiles();
+      return;
+    }
+
+    // Debounce search with 500ms delay
+    const timeoutId = setTimeout(() => {
+      // Update store search query and reload files
+      // This searches only in current directory (no recursive search)
+      setStoreSearchQuery(searchQuery);
+      loadFiles();
+    }, 500);
+
+    // Cleanup timeout on query change
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, isBrowsePage, setStoreSearchQuery, loadFiles]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement search
-    console.log("Search:", searchQuery);
+    // Form submission triggers immediate search
+    if (searchQuery.trim()) {
+      setStoreSearchQuery(searchQuery);
+      loadFiles();
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setStoreSearchQuery("");
+    loadFiles();
   };
 
   const handleLogout = async () => {
@@ -127,9 +166,18 @@ export function Header() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search files..."
-              className="w-64 h-9 pl-9 pr-3 rounded-lg border border-border bg-surface-secondary text-sm
+              className="w-64 h-9 pl-9 pr-9 rounded-lg border border-border bg-surface-secondary text-sm
                 placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-border-focus"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-content-secondary transition-colors"
+                aria-label="Clear search">
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </form>
       )}

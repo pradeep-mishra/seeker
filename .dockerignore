@@ -9,13 +9,11 @@ dist
 
 
 # Configuration (mounted as volume)
-#config
+config
 
 # Data (mounted as volume)
 data
 
-# Sample data
-sample-data
 
 # Git
 .git
@@ -24,6 +22,7 @@ sample-data
 # IDE
 .vscode
 .idea
+.cursor
 *.swp
 *.swo
 

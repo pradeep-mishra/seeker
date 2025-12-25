@@ -35,7 +35,8 @@ export default function BrowserPage() {
     loadMore,
     hasMore,
     navigateToPath,
-    refresh
+    refresh,
+    searchQuery
   } = useFileStore();
   const { viewMode, loadSettings, dialogs, openCreateFolderDialog } =
     useUIStore();
@@ -349,6 +350,7 @@ export default function BrowserPage() {
         onContextMenu={handleBackgroundContextMenu}
         onMouseDown={handleMouseDown}
         onCreateFolder={openCreateFolderDialog}
+        searchQuery={searchQuery}
       />
 
       {/* Drag and Drop Overlay */}

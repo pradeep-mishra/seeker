@@ -16,6 +16,7 @@ interface FileListContainerProps {
   onContextMenu: (e: React.MouseEvent) => void;
   onMouseDown: (e: React.MouseEvent) => void;
   onCreateFolder: () => void;
+  searchQuery?: string;
 }
 
 export function FileListContainer({
@@ -27,7 +28,8 @@ export function FileListContainer({
   loadMoreTriggerRef,
   onContextMenu,
   onMouseDown,
-  onCreateFolder
+  onCreateFolder,
+  searchQuery
 }: FileListContainerProps) {
   return (
     <div
@@ -40,7 +42,10 @@ export function FileListContainer({
           <LoadingSpinner size="lg" />
         </div>
       ) : files.length === 0 ? (
-        <EmptyFolderState onCreateFolder={onCreateFolder} />
+        <EmptyFolderState
+          onCreateFolder={onCreateFolder}
+          searchQuery={searchQuery}
+        />
       ) : (
         <>
           {viewMode === "list" && <FileListView files={files} />}

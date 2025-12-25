@@ -1,34 +1,38 @@
-# docker-compose.yml
-# Seeker File Browser - Docker Compose Configuration
+# docker-compose.build.yml
+# For developers - builds image locally from source
 
 services:
   seeker:
-    image: ipradeepmishra/seeker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: seeker
     restart: unless-stopped
     ports:
       - "7335:3000"
     volumes:
       # Configuration directory (required) - stores databases
-      - ./config-test:/config
+      - ./config:/config
       # Change this to your actual data directory
-      - /data:/data
+      - ./:/data
       # Add more mounts as needed and mount them in settings page
-      - /storage:/storage
+      - ./src:/storage
 
     environment:
-      - PORT=3000 # optional. default is 3000. update the port in the healthcheck if you changed it.
-      - HOST=0.0.0.0 # optional. default is 0.0.0.0.
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
       - CONFIG_PATH=/config
       - DEFAULT_MOUNT=/data
     healthcheck:
-      test: [
+      test:
+        [
           "CMD",
           "wget",
           "--no-verbose",
           "--tries=1",
           "--spider",
-          "http://localhost:3000/health" # update the port if you changed it in the environment variables.
+          "http://localhost:3000/health"
         ]
       interval: 30s
       timeout: 10s

@@ -1,9 +1,9 @@
 // src/client/pages/SetupPage.tsx
+import { FolderSearch, Lock, Sparkles, User } from "lucide-react";
 import { useState } from "react";
-import { useAuthStore } from "../stores/authStore";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
-import { FolderSearch, User, Lock, Sparkles } from "lucide-react";
+import { useAuthStore } from "../stores/authStore";
 
 export default function SetupPage() {
   const [username, setUsername] = useState("");
@@ -51,9 +51,10 @@ export default function SetupPage() {
             <FolderSearch className="w-8 h-8 text-accent" />
           </div>
           <h1 className="text-2xl font-bold text-content">Welcome to Seeker</h1>
-          <p className="text-content-secondary mt-1">Let's set up your file browser</p>
+          <p className="text-content-secondary mt-1">
+            Let's set up your file browser
+          </p>
         </div>
-
         {/* Setup form */}
         <div className="bg-surface rounded-lg shadow-medium p-6 border border-border">
           <div className="flex items-center gap-2 mb-4">
@@ -61,8 +62,12 @@ export default function SetupPage() {
               <Sparkles className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-content">Create Admin Account</h2>
-              <p className="text-sm text-content-tertiary">This will be the administrator account</p>
+              <h2 className="text-lg font-semibold text-content">
+                Create Admin Account
+              </h2>
+              <p className="text-sm text-content-tertiary">
+                This will be the administrator account
+              </p>
             </div>
           </div>
 
@@ -105,25 +110,19 @@ export default function SetupPage() {
               </div>
             )}
 
-            <Button
-              type="submit"
-              className="w-full"
-              isLoading={isLoading}
-            >
+            <Button type="submit" className="w-full" isLoading={isLoading}>
               Complete Setup
             </Button>
           </form>
         </div>
-
         {/* Info */}
         <div className="mt-6 p-4 rounded-lg bg-info-surface border border-info/20">
           <p className="text-sm text-content">
-            <strong>Note:</strong> After setup, you'll need to configure at least one 
+            <strong>Note:</strong> After setup, you can configure more than one
             mount point to browse files. You can do this in the settings.
           </p>
         </div>
-
-        {/* Footer */}
+        z{/* Footer */}
         <p className="text-center text-content-tertiary text-sm mt-6">
           Seeker v1.0.0
         </p>

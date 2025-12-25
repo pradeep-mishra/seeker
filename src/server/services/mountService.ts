@@ -232,7 +232,7 @@ export class MountService {
   async initializeDefaultMount(): Promise<void> {
     const defaultMount =
       process.env.DEFAULT_MOUNT || join(process.cwd(), "../");
-    console.log("defaultMount", defaultMount);
+    //console.log("defaultMount", defaultMount);
     if (defaultMount) {
       const existingMounts = await this.getAllMounts();
       if (existingMounts.length === 0) {

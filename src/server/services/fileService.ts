@@ -2,7 +2,7 @@
 import { $ } from "bun";
 import { constants } from "fs";
 import { access, mkdir, readdir, rename, rm, stat } from "fs/promises";
-import { basename, dirname, extname, join } from "path";
+import { basename, dirname, extname, join, sep } from "path";
 import { db, schema } from "../db";
 import type { SortBy, SortOrder } from "../db/schema";
 import { getMimeType, sanitizeFilename } from "../utils";
@@ -76,7 +76,10 @@ export class FileService {
     const mountsList = await db.select().from(mounts);
 
     for (const mount of mountsList) {
-      if (targetPath.startsWith(mount.path)) {
+      if (
+        targetPath === mount.path ||
+        targetPath.startsWith(mount.path + sep)
+      ) {
         return true;
       }
     }

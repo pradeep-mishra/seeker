@@ -92,7 +92,11 @@ export class UploadService {
       // Also scan for orphaned .partial files in common directories?
       // This is harder with direct-to-destination. We rely on DB.
     } catch (error) {
-      console.error("Failed to cleanup stale uploads:", error);
+      // Silently ignore if table doesn't exist yet (during initial migration)
+      const errorMsg = (error as Error).message || String(error);
+      if (!errorMsg.includes("no such table")) {
+        console.error("Failed to cleanup stale uploads:", error);
+      }
     }
   }
 

@@ -2,6 +2,8 @@
 
 A modern, native-feeling web-based file browser for home servers. Seeker provides a familiar file management experience similar to macOS Finder or Windows Explorer, accessible from any device through your browser.
 
+![Screenshot](screenshots/image1.png)
+
 ## Features
 
 ### File Management

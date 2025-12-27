@@ -144,7 +144,7 @@ export default function TextEditorPage() {
       </header>
 
       {/* Editor or Loading/Error state */}
-      <div className="flex-1 overflow-hidden p-4">
+      <div className="flex-1 overflow-hidden">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-accent mb-4" />

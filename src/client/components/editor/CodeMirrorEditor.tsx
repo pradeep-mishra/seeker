@@ -55,13 +55,13 @@ export default function CodeMirrorEditor({
 
   return (
     <div className={cn("relative w-full h-full flex flex-col", className)}>
-      <div className="flex-1 relative overflow-auto bg-surface border border-border rounded-lg shadow-sm">
+      <div className="flex-1 relative overflow-auto bg-surface">
         <CodeMirror
           value={content}
           height="100%"
           extensions={extensions}
           onChange={onChange}
-          theme="dark"
+          theme="light"
           basicSetup={{
             lineNumbers: true,
             highlightActiveLineGutter: true,

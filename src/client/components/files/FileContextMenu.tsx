@@ -7,6 +7,7 @@ import {
   FileText,
   FolderOpen,
   FolderPlus,
+  Image,
   Info,
   Pencil,
   Scissors,
@@ -17,7 +18,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { filesApi } from "../../lib/api";
-import { getFileName, isTextFile } from "../../lib/utils";
+import { getFileName, isImage, isTextFile } from "../../lib/utils";
 import { useBookmarkStore } from "../../stores/bookmarkStore";
 import { useFileStore } from "../../stores/fileStore";
 import { useSelectionStore } from "../../stores/selectionStore";
@@ -133,6 +134,13 @@ export function FileContextMenu() {
   const handleOpenInEditor = useCallback(() => {
     if (contextMenu.targetPath) {
       navigate(`/editor?path=${encodeURIComponent(contextMenu.targetPath)}`);
+    }
+    closeContextMenu();
+  }, [contextMenu.targetPath, navigate, closeContextMenu]);
+
+  const handleOpenInPreview = useCallback(() => {
+    if (contextMenu.targetPath) {
+      navigate(`/preview?path=${encodeURIComponent(contextMenu.targetPath)}`);
     }
     closeContextMenu();
   }, [contextMenu.targetPath, navigate, closeContextMenu]);
@@ -264,13 +272,17 @@ export function FileContextMenu() {
   const isMultiple = selectedCount > 1;
   const canPaste = hasClipboard();
 
-  // Check if the target file is a text file
+  // Check if the target file is a text file or image file
   const targetFile = contextMenu.targetPath
     ? files.find((f) => f.path === contextMenu.targetPath)
     : null;
   const isTargetTextFile =
     targetFile && !targetFile.isDirectory
       ? isTextFile(targetFile.mimeType, targetFile.extension, targetFile.name)
+      : false;
+  const isTargetImageFile =
+    targetFile && !targetFile.isDirectory
+      ? isImage(targetFile.mimeType)
       : false;
 
   // Use adjusted position if available, otherwise use original position
@@ -295,6 +307,14 @@ export function FileContextMenu() {
       {contextMenu.type === "file" && isTargetTextFile && !isMultiple && (
         <button onClick={handleOpenInEditor} className="context-menu-item">
           <FileText className="h-4 w-4" />
+          Open
+        </button>
+      )}
+
+      {/* Image file open option */}
+      {contextMenu.type === "file" && isTargetImageFile && !isMultiple && (
+        <button onClick={handleOpenInPreview} className="context-menu-item">
+          <Image className="h-4 w-4" />
           Open
         </button>
       )}

@@ -5,6 +5,7 @@ import { useAuthStore } from "./stores/authStore";
 
 // Pages
 import BrowserPage from "./pages/BrowserPage";
+import ImagePreviewPage from "./pages/ImagePreviewPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -117,6 +118,7 @@ export default function App() {
           <Route index element={<BrowserPage />} />
           <Route path="browse/*" element={<BrowserPage />} />
           <Route path="editor" element={<TextEditorPage />} />
+          <Route path="preview" element={<ImagePreviewPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="users" element={<UserManagementPage />} />
         </Route>

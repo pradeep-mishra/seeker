@@ -233,8 +233,10 @@ export const filesApi = {
       )
       .json<FileItem>(),
 
-  download: (path: string) =>
-    `/api/files/download?path=${encodeURIComponent(path)}`,
+  download: (path: string, inline?: boolean) =>
+    `/api/files/download?path=${encodeURIComponent(path)}${
+      inline ? "&inline=true" : ""
+    }`,
 
   thumbnail: (path: string) =>
     `/api/files/thumbnail?path=${encodeURIComponent(path)}`,

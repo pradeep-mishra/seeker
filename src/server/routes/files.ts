@@ -169,38 +169,54 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
 
   /**
    * GET /api/files/download
-   * Download a file
+   * Download a file (or view inline if inline=true)
    */
   .get(
     "/download",
     async ({ query, set }) => {
-      const { path } = query;
+      const { path, inline } = query;
 
       if (!path) {
         set.status = 400;
         return { error: "Path is required" };
       }
 
-      const result = await fileService.getFileStream(path);
+      // Validate path first
+      const validation = await fileService.validatePath(path);
+      if (!validation.valid) {
+        set.status = 403;
+        return { error: validation.error || "Access denied" };
+      }
 
-      if (!result) {
+      // Use Bun.file() directly - it handles responses better than streams
+      const file = Bun.file(path);
+
+      // Check if file exists
+      if (!(await file.exists())) {
         set.status = 404;
-        return { error: "File not found or not accessible" };
+        return { error: "File not found" };
       }
 
       const filename = basename(path);
 
-      set.headers["Content-Type"] = result.mimeType;
-      set.headers["Content-Length"] = result.stat.size.toString();
-      set.headers[
-        "Content-Disposition"
-      ] = `attachment; filename="${encodeURIComponent(filename)}"`;
+      // Set Content-Type
+      set.headers["Content-Type"] = file.type || "application/octet-stream";
 
-      return result.stream;
+      // Use inline disposition for preview, attachment for download
+      if (inline === "true") {
+        set.headers["Content-Disposition"] = "inline";
+      } else {
+        set.headers[
+          "Content-Disposition"
+        ] = `attachment; filename="${encodeURIComponent(filename)}"`;
+      }
+
+      return file;
     },
     {
       query: t.Object({
-        path: t.String()
+        path: t.String(),
+        inline: t.Optional(t.String())
       })
     }
   )

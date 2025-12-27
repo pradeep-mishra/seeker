@@ -18,6 +18,7 @@ import {
   formatDate,
   formatFileSize,
   getFileIconType,
+  isImage,
   isModifierPressed,
   isTextFile
 } from "../../lib/utils";
@@ -68,8 +69,9 @@ export function FileListView({ files }: FileListViewProps) {
         navigateToPath(item.path);
       } else if (isTextFile(item.mimeType, item.extension, item.name)) {
         navigate(`/editor?path=${encodeURIComponent(item.path)}`);
+      } else if (isImage(item.mimeType)) {
+        navigate(`/preview?path=${encodeURIComponent(item.path)}`);
       } else {
-        // TODO: Open file preview or download
         window.open(filesApi.download(item.path), "_blank");
       }
     },

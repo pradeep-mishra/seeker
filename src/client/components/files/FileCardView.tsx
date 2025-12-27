@@ -60,6 +60,8 @@ export function FileCardView({ files }: FileCardViewProps) {
         navigateToPath(item.path);
       } else if (isTextFile(item.mimeType, item.extension, item.name)) {
         navigate(`/editor?path=${encodeURIComponent(item.path)}`);
+      } else if (isImage(item.mimeType)) {
+        navigate(`/preview?path=${encodeURIComponent(item.path)}`);
       } else {
         window.open(filesApi.download(item.path), "_blank");
       }

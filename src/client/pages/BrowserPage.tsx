@@ -91,8 +91,14 @@ export default function BrowserPage() {
   // Refs for lasso selection
   const containerRef = useRef<HTMLDivElement>(null);
   const filesRef = useRef(files);
-  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const dragStartRef = useRef<{
+    x: number;
+    y: number;
+    scrollX: number;
+    scrollY: number;
+  } | null>(null);
   const isDraggingRef = useRef(false);
+  const lassoSelectedPathsRef = useRef<Set<string>>(new Set());
   const [selectionBox, setSelectionBox] = useState<{
     x: number;
     y: number;
@@ -237,57 +243,96 @@ export default function BrowserPage() {
   // Handle lasso selection
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (!dragStartRef.current) return;
+      if (!dragStartRef.current || !containerRef.current) return;
 
-      const startX = dragStartRef.current.x;
-      const startY = dragStartRef.current.y;
-      const currentX = e.clientX;
-      const currentY = e.clientY;
+      const container = containerRef.current;
+      const containerRect = container.getBoundingClientRect();
 
-      // Minimum drag distance to start selecting
+      // Get current mouse position in document space (relative to container + scroll offset)
+      const currentDocX = e.clientX - containerRect.left + container.scrollLeft;
+      const currentDocY = e.clientY - containerRect.top + container.scrollTop;
+
+      const startDocX = dragStartRef.current.x;
+      const startDocY = dragStartRef.current.y;
+
+      // Minimum drag distance to start selecting (in viewport space for UX)
       if (
         !isDraggingRef.current &&
-        (Math.abs(currentX - startX) > 5 || Math.abs(currentY - startY) > 5)
+        (Math.abs(
+          e.clientX -
+            (startDocX - dragStartRef.current.scrollX + containerRect.left)
+        ) > 5 ||
+          Math.abs(
+            e.clientY -
+              (startDocY - dragStartRef.current.scrollY + containerRect.top)
+          ) > 5)
       ) {
         isDraggingRef.current = true;
         clearSelection();
+        lassoSelectedPathsRef.current.clear();
       }
 
       if (isDraggingRef.current) {
-        const x = Math.min(startX, currentX);
-        const y = Math.min(startY, currentY);
-        const width = Math.abs(currentX - startX);
-        const height = Math.abs(currentY - startY);
+        // Calculate lasso box in document space
+        const docBoxLeft = Math.min(startDocX, currentDocX);
+        const docBoxTop = Math.min(startDocY, currentDocY);
+        const docBoxRight = Math.max(startDocX, currentDocX);
+        const docBoxBottom = Math.max(startDocY, currentDocY);
 
-        setSelectionBox({ x, y, width, height });
+        // Convert to viewport coordinates for visual display
+        const viewportX =
+          docBoxLeft - container.scrollLeft + containerRect.left;
+        const viewportY = docBoxTop - container.scrollTop + containerRect.top;
+        const width = docBoxRight - docBoxLeft;
+        const height = docBoxBottom - docBoxTop;
 
-        if (containerRef.current) {
-          const elements = containerRef.current.querySelectorAll("[data-path]");
-          const selectedItems: typeof files = [];
-          const boxRect = {
-            left: x,
-            right: x + width,
-            top: y,
-            bottom: y + height
-          };
+        setSelectionBox({
+          x: viewportX,
+          y: viewportY,
+          width,
+          height
+        });
 
-          elements.forEach((el) => {
-            const rect = el.getBoundingClientRect();
-            // Check intersection
-            if (
-              rect.left < boxRect.right &&
-              rect.right > boxRect.left &&
-              rect.top < boxRect.bottom &&
-              rect.bottom > boxRect.top
-            ) {
-              const path = el.getAttribute("data-path");
-              const item = filesRef.current.find((f) => f.path === path);
-              if (item) selectedItems.push(item);
-            }
-          });
+        // Check all file elements for intersection
+        const elements = container.querySelectorAll("[data-path]");
 
-          selectAll(selectedItems);
-        }
+        elements.forEach((el) => {
+          const path = el.getAttribute("data-path");
+          if (!path) return;
+
+          const rect = el.getBoundingClientRect();
+
+          // Convert element position to document space
+          const elemDocLeft =
+            rect.left - containerRect.left + container.scrollLeft;
+          const elemDocTop = rect.top - containerRect.top + container.scrollTop;
+          const elemDocRight = elemDocLeft + rect.width;
+          const elemDocBottom = elemDocTop + rect.height;
+
+          // Check intersection in document space
+          const isIntersecting =
+            elemDocLeft < docBoxRight &&
+            elemDocRight > docBoxLeft &&
+            elemDocTop < docBoxBottom &&
+            elemDocBottom > docBoxTop;
+
+          if (isIntersecting) {
+            // Add to selection
+            lassoSelectedPathsRef.current.add(path);
+          } else {
+            // Remove from selection (lasso retracted)
+            lassoSelectedPathsRef.current.delete(path);
+          }
+        });
+
+        // Build final selection from accumulated paths
+        const selectedItems: typeof files = [];
+        lassoSelectedPathsRef.current.forEach((path) => {
+          const item = filesRef.current.find((f) => f.path === path);
+          if (item) selectedItems.push(item);
+        });
+
+        selectAll(selectedItems);
       }
     },
     [clearSelection, selectAll]
@@ -301,6 +346,7 @@ export default function BrowserPage() {
 
     dragStartRef.current = null;
     setSelectionBox(null);
+    lassoSelectedPathsRef.current.clear();
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
 
@@ -317,7 +363,21 @@ export default function BrowserPage() {
     // Check if we clicked on a file item
     if ((e.target as Element).closest("[data-path]")) return;
 
-    dragStartRef.current = { x: e.clientX, y: e.clientY };
+    if (!containerRef.current) return;
+
+    const container = containerRef.current;
+    const containerRect = container.getBoundingClientRect();
+
+    // Store initial position in document space
+    const docX = e.clientX - containerRect.left + container.scrollLeft;
+    const docY = e.clientY - containerRect.top + container.scrollTop;
+
+    dragStartRef.current = {
+      x: docX,
+      y: docY,
+      scrollX: container.scrollLeft,
+      scrollY: container.scrollTop
+    };
     isDraggingRef.current = false;
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -332,6 +392,7 @@ export default function BrowserPage() {
         setSelectionBox(null);
         dragStartRef.current = null;
         isDraggingRef.current = false;
+        lassoSelectedPathsRef.current.clear();
       }
     };
 

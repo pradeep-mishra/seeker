@@ -25,6 +25,7 @@ A beautiful, fast, and secure web-based file browser built with Bun, Elysia, and
 docker run -d \
   --name seeker \
   -p 7335:3000 \
+  -u 1000:1000 \
   -v ./config:/config \
   -v /path/to/your/files:/data \
   ipradeepmishra/seeker:latest
@@ -52,8 +53,8 @@ services:
       - GID=1000 # optional, group id default is 1000
       - PORT=3000 # optional, default is 3000
       - HOST=0.0.0.0 # optional, default is 0.0.0.0
-      - CONFIG_PATH=/config # optional, default is 0.0.0.0
-      - DEFAULT_MOUNT=/data # optional, default is 0.0.0.0
+      - CONFIG_PATH=/config # optional, default is /config
+      - DEFAULT_MOUNT=/data # optional, default is /data
 ```
 
 Start the container:
@@ -125,13 +126,13 @@ docker run -d \
 ### Using Specific Version
 
 ```bash
-docker pull ipradeepmishra/seeker:1.0.0
+docker pull ipradeepmishra/seeker:0.0.1
 docker run -d \
   --name seeker \
   -p 7335:3000 \
   -v ./config:/config \
   -v /path/to/your/files:/data \
-  ipradeepmishra/seeker:1.0.0
+  ipradeepmishra/seeker:0.0.1
 ```
 
 ## Health Check
@@ -310,4 +311,4 @@ If you find this project useful, please consider:
 
 ---
 
-**Maintained by** [ipradeepmishra](https://github.com/pradeep-mishra)
+**Maintained by** [pradeep](https://github.com/pradeep-mishra)

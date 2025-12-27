@@ -54,7 +54,7 @@ function createApp(): Elysia {
   app.get("/health", () => ({
     status: "ok",
     timestamp: new Date().toISOString(),
-    version: "1.0.0"
+    version: "0.0.1"
   }));
 
   // API routes

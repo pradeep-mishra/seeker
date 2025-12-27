@@ -312,6 +312,21 @@ export function isImage(mimeType: string | null): boolean {
 }
 
 /**
+ * Check if a file is a PDF
+ */
+export function isPdf(mimeType: string | null): boolean {
+  if (!mimeType) return false;
+  return mimeType === "application/pdf";
+}
+
+/**
+ * Check if a file can have a thumbnail (images or PDFs)
+ */
+export function hasThumbnail(mimeType: string | null): boolean {
+  return isImage(mimeType) || isPdf(mimeType);
+}
+
+/**
  * Check if a file is a video
  */
 export function isVideo(mimeType: string | null): boolean {

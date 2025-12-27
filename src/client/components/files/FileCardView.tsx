@@ -8,6 +8,7 @@ import {
   formatRelativeTime,
   isImage,
   isModifierPressed,
+  isPdf,
   isVideo
 } from "../../lib/utils";
 import { useFileStore } from "../../stores/fileStore";
@@ -131,7 +132,7 @@ export function FileCardView({ files }: FileCardViewProps) {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-h-0">
       {files.map((item) => {
         const selected = isSelected(item.path);
-        const showThumbnail = isImage(item.mimeType);
+        const showThumbnail = isImage(item.mimeType) || isPdf(item.mimeType);
         const showVideoOverlay = isVideo(item.mimeType);
 
         return (

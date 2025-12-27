@@ -2,23 +2,24 @@
 # Multi-stage build for Seeker File Browser
 
 # ============================================
-# Stage 1: Build the application
+# Stage 1: Build the client (Vite/React)
+# Use Node.js because Bun has cross-compilation issues under emulation
 # ============================================
-FROM oven/bun:1.3-alpine AS builder
+FROM node:20-alpine AS client-builder
 
 WORKDIR /app
 
 # Copy package files
-COPY package.json bun.lock* ./
+COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN bun install --frozen-lockfile
+# Install dependencies with npm
+RUN npm ci
 
-# Copy source code
+# Copy source code (only what's needed for client build)
 COPY . .
 
-# Build client
-RUN bun run build:client
+# Build client with Vite
+RUN npm run build:client
 
 # ============================================
 # Stage 2: Production image
@@ -70,12 +71,12 @@ RUN apk add --no-cache --virtual .build-deps \
     apk del .build-deps
 
 
-# Copy built client from builder (using numeric UID/GID)
-COPY --chown=$UID:$GID --from=builder /app/dist/client ./dist/client
+# Copy built client from Node.js build stage (using numeric UID/GID)
+COPY --chown=$UID:$GID --from=client-builder /app/dist/client ./dist/client
 
-# Copy server source (we run from source with Bun)
-COPY --chown=$UID:$GID --from=builder /app/src/server ./src/server
-COPY --chown=$UID:$GID --from=builder /app/tsconfig.json ./
+# Copy server source directly from context (we run from source with Bun)
+COPY --chown=$UID:$GID ./src/server ./src/server
+COPY --chown=$UID:$GID ./tsconfig.json ./
 
 # Create config directory and set ownership using actual user/group
 RUN USER_NAME=$(cat /app/.docker_user) && \

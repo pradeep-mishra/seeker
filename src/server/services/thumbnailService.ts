@@ -5,6 +5,10 @@ import { thumbDb, thumbSchema } from "../db";
 import { getMimeType } from "../utils";
 import { fileService } from "./fileService";
 
+// PDF rendering - using system command approach for better Bun compatibility
+// No native modules required - uses pdftoppm from poppler-utils
+import { $ } from "bun";
+
 const { thumbnails } = thumbSchema;
 
 /**
@@ -16,6 +20,14 @@ const THUMBNAIL_CONFIG = {
   fit: "cover" as const,
   format: "webp" as const,
   quality: 80
+};
+
+/**
+ * PDF rendering configuration
+ */
+const PDF_RENDER_CONFIG = {
+  scale: 2.0, // Higher scale for better quality
+  maxRenderTime: 30000 // 30 seconds timeout
 };
 
 /**
@@ -31,16 +43,44 @@ const SUPPORTED_FORMATS = new Set([
 ]);
 
 /**
+ * Supported PDF format for thumbnail generation
+ */
+const PDF_MIME_TYPE = "application/pdf";
+
+/**
  * Thumbnail Service
- * Handles thumbnail generation and caching for images
+ * Handles thumbnail generation and caching for images and PDFs
  */
 export class ThumbnailService {
+  // Cache for PDF tool availability check (lazy initialization)
+  private pdfToolAvailable: boolean | null = null;
+
+  /**
+   * Check if pdftoppm command is available (cached)
+   */
+  private async checkPdfToolAvailable(): Promise<boolean> {
+    // Return cached result if available
+    if (this.pdfToolAvailable !== null) {
+      return this.pdfToolAvailable;
+    }
+
+    // Check once and cache the result
+    try {
+      const result = await $`pdftoppm -v`.quiet();
+      this.pdfToolAvailable = result.exitCode === 0;
+      return this.pdfToolAvailable;
+    } catch {
+      this.pdfToolAvailable = false;
+      return false;
+    }
+  }
+
   /**
    * Check if a file can have a thumbnail generated
    */
   canGenerateThumbnail(mimeType: string | null): boolean {
     if (!mimeType) return false;
-    return SUPPORTED_FORMATS.has(mimeType);
+    return SUPPORTED_FORMATS.has(mimeType) || mimeType === PDF_MIME_TYPE;
   }
 
   /**
@@ -62,7 +102,7 @@ export class ThumbnailService {
     }
     const mtime = new Date(file.lastModified);
 
-    // Check if it's a supported image format
+    // Check if it's a supported format (image or PDF)
     const mimeType = getMimeType(filePath);
     if (!this.canGenerateThumbnail(mimeType)) {
       return null;
@@ -127,11 +167,19 @@ export class ThumbnailService {
   }
 
   /**
-   * Generate a thumbnail for an image file
+   * Generate a thumbnail for an image file or PDF
    */
   private async generateThumbnail(
     filePath: string
   ): Promise<{ data: Buffer; mimeType: string } | null> {
+    const mimeType = getMimeType(filePath);
+
+    // Handle PDF files
+    if (mimeType === PDF_MIME_TYPE) {
+      return this.generatePdfThumbnail(filePath);
+    }
+
+    // Handle image files (existing logic)
     try {
       const image = sharp(filePath);
       const metadata = await image.metadata();
@@ -153,7 +201,98 @@ export class ThumbnailService {
         mimeType: "image/webp"
       };
     } catch (error) {
-      console.error(`Error generating thumbnail: ${error}`);
+      console.error(`Error generating image thumbnail: ${filePath}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Generate a thumbnail for a PDF file (first page) using pdftoppm
+   * Uses system command for better Bun compatibility (no native modules)
+   */
+  private async generatePdfThumbnail(
+    filePath: string
+  ): Promise<{ data: Buffer; mimeType: string } | null> {
+    // Check if pdftoppm is available
+    const toolAvailable = await this.checkPdfToolAvailable();
+    if (!toolAvailable) {
+      console.warn(
+        "pdftoppm not available. Install poppler-utils: brew install poppler (macOS) or apt-get install poppler-utils (Linux)"
+      );
+      return null;
+    }
+
+    try {
+      // Read PDF file with error handling
+      const file = Bun.file(filePath);
+      if (!(await file.exists())) {
+        console.error(`PDF file does not exist: ${filePath}`);
+        return null;
+      }
+
+      // Use pdftoppm to convert first page to JPEG (faster I/O than PNG)
+      // -f 1 -l 1: first page only
+      // -jpeg: output JPEG format (faster processing and I/O)
+      // -jpegopt quality=85: good quality JPEG
+      // No scaling here - let Sharp handle resizing more efficiently
+      // Using $ template tag for cleaner syntax, with binary output
+      const commandPromise =
+        $`pdftoppm -f 1 -l 1 -jpeg -jpegopt quality=85 ${filePath}`
+          .quiet() // Suppress stderr unless command fails
+          .arrayBuffer();
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("PDF conversion timeout")),
+          PDF_RENDER_CONFIG.maxRenderTime
+        )
+      );
+
+      let result: ArrayBuffer;
+      try {
+        result = await Promise.race([commandPromise, timeoutPromise]);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error(`pdftoppm failed for ${filePath}: ${errorMsg}`);
+        return null;
+      }
+
+      if (!result || result.byteLength === 0) {
+        console.error(`pdftoppm produced empty output for: ${filePath}`);
+        return null;
+      }
+
+      const imageBuffer = Buffer.from(result);
+
+      // Use sharp to resize and optimize
+      // Sharp is more efficient at resizing than pdftoppm's scaling
+      // Process JPEG -> resize -> WebP in one pipeline
+      const thumbnail = await sharp(imageBuffer)
+        .resize(THUMBNAIL_CONFIG.width, THUMBNAIL_CONFIG.height, {
+          fit: THUMBNAIL_CONFIG.fit,
+          position: "center",
+          withoutEnlargement: true // Don't upscale small PDFs
+        })
+        .webp({ quality: THUMBNAIL_CONFIG.quality })
+        .toBuffer();
+
+      if (!thumbnail || thumbnail.length === 0) {
+        console.error(`Failed to process PDF thumbnail: ${filePath}`);
+        return null;
+      }
+
+      return {
+        data: thumbnail,
+        mimeType: "image/webp"
+      };
+    } catch (error) {
+      // Comprehensive error handling - log but don't crash
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error(
+        `Error generating PDF thumbnail for ${filePath}:`,
+        errorMessage
+      );
       return null;
     }
   }

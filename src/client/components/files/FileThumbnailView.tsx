@@ -3,7 +3,7 @@ import { File, FileText, Folder, Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FileItem } from "../../lib/api";
 import { filesApi } from "../../lib/api";
-import { isImage, isModifierPressed, isVideo } from "../../lib/utils";
+import { isImage, isModifierPressed, isPdf, isVideo } from "../../lib/utils";
 import { useFileStore } from "../../stores/fileStore";
 import { useSelectionStore } from "../../stores/selectionStore";
 import { useUIStore } from "../../stores/uiStore";
@@ -125,7 +125,7 @@ export function FileThumbnailView({ files }: FileThumbnailViewProps) {
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 min-h-0">
       {files.map((item) => {
         const selected = isSelected(item.path);
-        const showThumbnail = isImage(item.mimeType);
+        const showThumbnail = isImage(item.mimeType) || isPdf(item.mimeType);
         const showVideoOverlay = isVideo(item.mimeType);
 
         return (

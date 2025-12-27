@@ -1,6 +1,7 @@
 // src/client/pages/BrowserPage.tsx
 import { FolderUp } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   EmptyStates,
   FileListContainer,
@@ -22,11 +23,46 @@ import { useFileStore } from "../stores/fileStore";
 import { useSelectionStore } from "../stores/selectionStore";
 import { useUIStore } from "../stores/uiStore";
 
+/**
+ * Find the mount that a path belongs to.
+ * Returns the mount with the longest matching path to handle nested mounts correctly.
+ */
+function findMountForPath(path: string, mounts: Mount[]): Mount | null {
+  if (!path || mounts.length === 0) return null;
+
+  // Normalize path (remove trailing slashes for comparison)
+  const normalizedPath = path.replace(/\/+$/, "");
+
+  let bestMatch: Mount | null = null;
+  let bestMatchLength = 0;
+
+  for (const mount of mounts) {
+    const normalizedMountPath = mount.path.replace(/\/+$/, "");
+
+    // Check for exact match first
+    if (normalizedPath === normalizedMountPath) {
+      return mount;
+    }
+
+    // Check if path starts with mount path
+    if (normalizedPath.startsWith(normalizedMountPath + "/")) {
+      // Use the longest matching mount (handles nested mounts)
+      if (normalizedMountPath.length > bestMatchLength) {
+        bestMatch = mount;
+        bestMatchLength = normalizedMountPath.length;
+      }
+    }
+  }
+
+  return bestMatch;
+}
+
 export default function BrowserPage() {
-  //const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuthStore();
   const {
     currentPath,
+    currentMount,
     files,
     isLoading,
     error,
@@ -36,7 +72,8 @@ export default function BrowserPage() {
     hasMore,
     navigateToPath,
     refresh,
-    searchQuery
+    searchQuery,
+    setCurrentMount
   } = useFileStore();
   const { viewMode, loadSettings, dialogs, openCreateFolderDialog } =
     useUIStore();
@@ -76,9 +113,63 @@ export default function BrowserPage() {
         const { mounts: mountList } = await mountsApi.list();
         setMounts(mountList);
 
-        // If no current path and mounts exist, navigate to first mount
-        if (!currentPath && mountList.length > 0) {
-          navigateToPath(mountList[0].path, mountList[0]);
+        if (mountList.length === 0) {
+          setIsInitializing(false);
+          return;
+        }
+
+        // Try to get path from URL query string
+        const urlPath = searchParams.get("path");
+
+        if (urlPath) {
+          try {
+            const decodedPath = decodeURIComponent(urlPath);
+
+            // Find which mount this path belongs to
+            const targetMount = findMountForPath(decodedPath, mountList);
+
+            if (targetMount) {
+              // Try to navigate to the path and verify it exists
+              navigateToPath(decodedPath, targetMount);
+
+              // Verify the path exists by attempting to load it
+              try {
+                await loadFiles();
+                // If successful, update URL to ensure it's correct and we're done
+                const encodedPath = encodeURIComponent(decodedPath);
+                if (urlPath !== encodedPath) {
+                  setSearchParams({ path: encodedPath }, { replace: true });
+                }
+                setIsInitializing(false);
+                return;
+              } catch (error) {
+                // Path doesn't exist or failed to load, fallback to mount root
+                console.warn(
+                  "Path from URL doesn't exist, falling back to mount root:",
+                  error
+                );
+                navigateToPath(targetMount.path, targetMount);
+                setSearchParams(
+                  { path: encodeURIComponent(targetMount.path) },
+                  { replace: true }
+                );
+                setIsInitializing(false);
+                return;
+              }
+            }
+          } catch (error) {
+            console.warn("Failed to decode URL path:", error);
+          }
+        }
+
+        // Fallback: navigate to first mount root if no URL path or path is invalid
+        if (mountList.length > 0) {
+          const firstMount = mountList[0];
+          navigateToPath(firstMount.path, firstMount);
+          setSearchParams(
+            { path: encodeURIComponent(firstMount.path) },
+            { replace: true }
+          );
         }
       } catch (error) {
         console.error("Failed to initialize:", error);
@@ -88,7 +179,18 @@ export default function BrowserPage() {
     };
 
     init();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
+
+  // Find mount for path if not set (when navigating from other components)
+  useEffect(() => {
+    if (!isInitializing && currentPath && mounts.length > 0 && !currentMount) {
+      const foundMount = findMountForPath(currentPath, mounts);
+      if (foundMount) {
+        setCurrentMount(foundMount);
+      }
+    }
+  }, [currentPath, currentMount, mounts, isInitializing, setCurrentMount]);
 
   // Load files when currentPath changes
   useEffect(() => {
@@ -96,7 +198,20 @@ export default function BrowserPage() {
       loadFiles();
       clearSelection();
     }
-  }, [currentPath]);
+  }, [currentPath, loadFiles, clearSelection]);
+
+  // Update URL query string when currentPath changes (but not during initial load)
+  useEffect(() => {
+    if (!isInitializing && currentPath) {
+      const currentUrlPath = searchParams.get("path");
+      const encodedPath = encodeURIComponent(currentPath);
+
+      // Only update if URL is different to avoid unnecessary navigation
+      if (currentUrlPath !== encodedPath) {
+        setSearchParams({ path: encodedPath }, { replace: true });
+      }
+    }
+  }, [currentPath, isInitializing, searchParams, setSearchParams]);
 
   // Infinite scroll observer
   useEffect(() => {

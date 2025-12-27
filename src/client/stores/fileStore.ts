@@ -42,6 +42,9 @@ interface FileState {
   setSearchQuery: (query: string) => void;
   search: (query: string, recursive?: boolean) => Promise<void>;
   clearSearch: () => void;
+
+  // Optimistic updates
+  removeFiles: (paths: string[]) => void;
 }
 
 export const useFileStore = create<FileState>((set, get) => ({
@@ -271,6 +274,23 @@ export const useFileStore = create<FileState>((set, get) => ({
       searchQuery: "",
       searchResults: [],
       isSearching: false
+    });
+  },
+
+  // Remove files optimistically
+  removeFiles: (paths) => {
+    const { files, total, hasMore, loadFiles } = get();
+    const newFiles = files.filter((f) => !paths.includes(f.path));
+
+    // If we cleared the current view but there are more files, reload to fetch them
+    if (newFiles.length === 0 && hasMore) {
+      loadFiles();
+      return;
+    }
+
+    set({
+      files: newFiles,
+      total: Math.max(0, total - paths.length)
     });
   }
 }));

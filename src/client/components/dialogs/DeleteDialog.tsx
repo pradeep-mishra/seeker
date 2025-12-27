@@ -10,7 +10,7 @@ import { toast } from "../common/Toast";
 
 export function DeleteDialog() {
   const { dialogs, closeDeleteDialog } = useUIStore();
-  const { refresh } = useFileStore();
+  const { removeFiles } = useFileStore();
   const { clearSelection } = useSelectionStore();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -31,15 +31,18 @@ export function DeleteDialog() {
     try {
       const result = await filesApi.delete(paths);
 
+      // Determine which files were successfully deleted
+      const successfulPaths = result.results
+        .filter((r) => r.success)
+        .map((r) => r.path)
+        .filter((p): p is string => !!p);
+
       if (result.success) {
         toast.success(
           isSingle
             ? "Item deleted successfully"
             : `${count} items deleted successfully`
         );
-        clearSelection();
-        closeDeleteDialog();
-        refresh();
       } else {
         // Some items failed
         const failed = result.results.filter((r) => !r.success);
@@ -48,10 +51,15 @@ export function DeleteDialog() {
             `${failed.length} of ${count} items could not be deleted`
           );
         }
-        clearSelection();
-        closeDeleteDialog();
-        refresh();
       }
+
+      // Optimistically remove successful items without triggering full reload
+      if (successfulPaths.length > 0) {
+        removeFiles(successfulPaths);
+      }
+
+      clearSelection();
+      closeDeleteDialog();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to delete");
     } finally {

@@ -12,13 +12,14 @@ import {
   Pencil,
   Scissors,
   Star,
-  Trash2
+  Trash2,
+  Video
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { filesApi } from "../../lib/api";
-import { getFileName, isImage, isTextFile } from "../../lib/utils";
+import { getFileName, isImage, isTextFile, isVideo } from "../../lib/utils";
 import { useBookmarkStore } from "../../stores/bookmarkStore";
 import { useFileStore } from "../../stores/fileStore";
 import { useSelectionStore } from "../../stores/selectionStore";
@@ -141,6 +142,13 @@ export function FileContextMenu() {
   const handleOpenInPreview = useCallback(() => {
     if (contextMenu.targetPath) {
       navigate(`/preview?path=${encodeURIComponent(contextMenu.targetPath)}`);
+    }
+    closeContextMenu();
+  }, [contextMenu.targetPath, navigate, closeContextMenu]);
+
+  const handleOpenInVideoPlayer = useCallback(() => {
+    if (contextMenu.targetPath) {
+      navigate(`/video?path=${encodeURIComponent(contextMenu.targetPath)}`);
     }
     closeContextMenu();
   }, [contextMenu.targetPath, navigate, closeContextMenu]);
@@ -272,7 +280,7 @@ export function FileContextMenu() {
   const isMultiple = selectedCount > 1;
   const canPaste = hasClipboard();
 
-  // Check if the target file is a text file or image file
+  // Check if the target file is a text file, image file, or video file
   const targetFile = contextMenu.targetPath
     ? files.find((f) => f.path === contextMenu.targetPath)
     : null;
@@ -283,6 +291,10 @@ export function FileContextMenu() {
   const isTargetImageFile =
     targetFile && !targetFile.isDirectory
       ? isImage(targetFile.mimeType)
+      : false;
+  const isTargetVideoFile =
+    targetFile && !targetFile.isDirectory
+      ? isVideo(targetFile.mimeType)
       : false;
 
   // Use adjusted position if available, otherwise use original position
@@ -315,6 +327,14 @@ export function FileContextMenu() {
       {contextMenu.type === "file" && isTargetImageFile && !isMultiple && (
         <button onClick={handleOpenInPreview} className="context-menu-item">
           <Image className="h-4 w-4" />
+          Open
+        </button>
+      )}
+
+      {/* Video file open option */}
+      {contextMenu.type === "file" && isTargetVideoFile && !isMultiple && (
+        <button onClick={handleOpenInVideoPlayer} className="context-menu-item">
+          <Video className="h-4 w-4" />
           Open
         </button>
       )}

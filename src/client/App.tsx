@@ -1,9 +1,9 @@
 // src/client/App.tsx
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuthStore } from "./stores/authStore";
 
-// Pages
+// Pages (eagerly loaded)
 import BrowserPage from "./pages/BrowserPage";
 import ImagePreviewPage from "./pages/ImagePreviewPage";
 import LoginPage from "./pages/LoginPage";
@@ -12,6 +12,9 @@ import SettingsPage from "./pages/SettingsPage";
 import SetupPage from "./pages/SetupPage";
 import TextEditorPage from "./pages/TextEditorPage";
 import UserManagementPage from "./pages/UserManagementPage";
+
+// Lazy loaded pages
+const VideoPlayerPage = lazy(() => import("./pages/VideoPlayerPage"));
 
 // Components
 import { LoadingScreen } from "./components/common/LoadingScreen";
@@ -119,6 +122,14 @@ export default function App() {
           <Route path="browse/*" element={<BrowserPage />} />
           <Route path="editor" element={<TextEditorPage />} />
           <Route path="preview" element={<ImagePreviewPage />} />
+          <Route
+            path="video"
+            element={
+              <Suspense fallback={<LoadingScreen />}>
+                <VideoPlayerPage />
+              </Suspense>
+            }
+          />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="users" element={<UserManagementPage />} />
         </Route>

@@ -238,6 +238,9 @@ export const filesApi = {
       inline ? "&inline=true" : ""
     }`,
 
+  stream: (path: string) =>
+    `/api/files/stream?path=${encodeURIComponent(path)}`,
+
   thumbnail: (path: string) =>
     `/api/files/thumbnail?path=${encodeURIComponent(path)}`,
 

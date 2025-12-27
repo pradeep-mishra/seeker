@@ -20,7 +20,8 @@ import {
   getFileIconType,
   isImage,
   isModifierPressed,
-  isTextFile
+  isTextFile,
+  isVideo
 } from "../../lib/utils";
 import { useFileStore } from "../../stores/fileStore";
 import { useSelectionStore } from "../../stores/selectionStore";
@@ -71,6 +72,8 @@ export function FileListView({ files }: FileListViewProps) {
         navigate(`/editor?path=${encodeURIComponent(item.path)}`);
       } else if (isImage(item.mimeType)) {
         navigate(`/preview?path=${encodeURIComponent(item.path)}`);
+      } else if (isVideo(item.mimeType)) {
+        navigate(`/video?path=${encodeURIComponent(item.path)}`);
       } else {
         window.open(filesApi.download(item.path), "_blank");
       }

@@ -335,6 +335,37 @@ export function isVideo(mimeType: string | null): boolean {
 }
 
 /**
+ * Get video support tier (native browser support vs unsupported)
+ */
+export function getVideoSupportTier(
+  mimeType: string | null
+): "native" | "limited" | "unsupported" {
+  if (!mimeType) return "unsupported";
+
+  // Full native support - these always work
+  const fullySupported = ["video/mp4", "video/webm", "video/ogg"];
+
+  // Limited support - depends on codec inside container
+  const limitedSupport = [
+    "video/quicktime", // MOV files - codec dependent, moov atom location matters
+    "video/x-msvideo", // AVI - rarely works
+    "video/x-matroska" // MKV - codec dependent
+  ];
+
+  if (fullySupported.includes(mimeType)) return "native";
+  if (limitedSupport.includes(mimeType)) return "limited";
+  return "unsupported";
+}
+
+/**
+ * Get video file extensions we can play
+ */
+export function isPlayableVideoExtension(extension: string): boolean {
+  const playableExts = ["mp4", "webm", "mov", "ogv"];
+  return playableExts.includes(extension.toLowerCase());
+}
+
+/**
  * Check if a file is playable audio
  */
 export function isAudio(mimeType: string | null): boolean {

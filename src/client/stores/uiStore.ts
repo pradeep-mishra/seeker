@@ -39,6 +39,9 @@ interface UIState {
   showHiddenFiles: boolean;
   theme: "light" | "dark";
 
+  // Video player settings
+  videoVolume: number;
+
   // Sidebar
   isSidebarOpen: boolean;
   isSidebarCollapsed: boolean;
@@ -60,6 +63,7 @@ interface UIState {
   toggleSortOrder: () => void;
   setShowHiddenFiles: (show: boolean) => void;
   setTheme: (theme: "light" | "dark") => void;
+  setVideoVolume: (volume: number) => void;
   loadSettings: () => Promise<void>;
   saveSettings: () => Promise<void>;
 
@@ -109,6 +113,7 @@ export const useUIStore = create<UIState>()(
       sortOrder: "asc",
       showHiddenFiles: true,
       theme: "light",
+      videoVolume: 1.0,
 
       isSidebarOpen: true,
       isSidebarCollapsed: false,
@@ -174,6 +179,10 @@ export const useUIStore = create<UIState>()(
           document.documentElement.classList.remove("dark");
         }
         get().saveSettings();
+      },
+
+      setVideoVolume: (volume) => {
+        set({ videoVolume: Math.max(0, Math.min(1, volume)) });
       },
 
       loadSettings: async () => {
@@ -368,7 +377,8 @@ export const useUIStore = create<UIState>()(
     {
       name: "seeker-ui-storage",
       partialize: (state) => ({
-        isSidebarCollapsed: state.isSidebarCollapsed
+        isSidebarCollapsed: state.isSidebarCollapsed,
+        videoVolume: state.videoVolume
       })
     }
   )

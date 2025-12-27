@@ -222,6 +222,87 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
   )
 
   /**
+   * GET /api/files/stream
+   * Stream video file with range request support (206 Partial Content)
+   */
+  .get(
+    "/stream",
+    async ({ query, set, request }: any) => {
+      const { path } = query;
+
+      if (!path) {
+        set.status = 400;
+        return { error: "Path is required" };
+      }
+
+      // Validate path
+      const validation = await fileService.validatePath(path);
+      if (!validation.valid) {
+        set.status = 403;
+        return { error: validation.error || "Access denied" };
+      }
+
+      const file = Bun.file(path);
+
+      if (!(await file.exists())) {
+        set.status = 404;
+        return { error: "File not found" };
+      }
+
+      const fileSize = file.size;
+      const mimeType = file.type || "video/mp4";
+
+      // Parse Range header
+      const range = request.headers.get("range");
+
+      if (!range) {
+        // No range requested - send entire file
+        set.headers["Content-Type"] = mimeType;
+        set.headers["Content-Length"] = fileSize.toString();
+        set.headers["Accept-Ranges"] = "bytes";
+        set.headers["Cache-Control"] = "public, max-age=3600";
+        return file;
+      }
+
+      // Parse range (format: "bytes=start-end")
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+      // Validate parsed range values
+      if (
+        isNaN(start) ||
+        isNaN(end) ||
+        start < 0 ||
+        end >= fileSize ||
+        start > end
+      ) {
+        set.status = 416; // Range Not Satisfiable
+        set.headers["Content-Range"] = `bytes */${fileSize}`;
+        return { error: "Invalid range" };
+      }
+
+      const chunkSize = end - start + 1;
+
+      // Return 206 Partial Content
+      set.status = 206;
+      set.headers["Content-Type"] = mimeType;
+      set.headers["Content-Length"] = chunkSize.toString();
+      set.headers["Content-Range"] = `bytes ${start}-${end}/${fileSize}`;
+      set.headers["Accept-Ranges"] = "bytes";
+      set.headers["Cache-Control"] = "public, max-age=3600";
+
+      // Use Bun's zero-copy slice
+      return file.slice(start, end + 1);
+    },
+    {
+      query: t.Object({
+        path: t.String()
+      })
+    }
+  )
+
+  /**
    * GET /api/files/content
    * Get file content as text
    */

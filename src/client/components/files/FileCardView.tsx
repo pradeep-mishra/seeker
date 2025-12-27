@@ -62,6 +62,8 @@ export function FileCardView({ files }: FileCardViewProps) {
         navigate(`/editor?path=${encodeURIComponent(item.path)}`);
       } else if (isImage(item.mimeType)) {
         navigate(`/preview?path=${encodeURIComponent(item.path)}`);
+      } else if (isVideo(item.mimeType)) {
+        navigate(`/video?path=${encodeURIComponent(item.path)}`);
       } else {
         window.open(filesApi.download(item.path), "_blank");
       }

@@ -24,9 +24,16 @@
     "docker:inspect": "docker buildx imagetools inspect ipradeepmishra/seeker:latest"
   },
   "dependencies": {
+    "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/lang-yaml": "^6.1.2",
+    "@codemirror/language": "^6.10.6",
+    "@codemirror/legacy-modes": "^6.5.2",
+    "@codemirror/state": "^6.4.1",
+    "@codemirror/view": "^6.35.0",
     "@elysiajs/cors": "^1.4.0",
     "@elysiajs/static": "^1.4.7",
     "@tanstack/react-virtual": "^3.13.13",
+    "@uiw/react-codemirror": "^4.25.4",
     "canvas": "^3.2.0",
     "drizzle-orm": "^0.45.1",
     "elysia": "^1.4.19",

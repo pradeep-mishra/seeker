@@ -239,6 +239,16 @@ export const filesApi = {
   thumbnail: (path: string) =>
     `/api/files/thumbnail?path=${encodeURIComponent(path)}`,
 
+  getContent: (path: string) =>
+    api
+      .get(`files/content?path=${encodeURIComponent(path)}`)
+      .json<{ content: string; mimeType: string }>(),
+
+  saveContent: (path: string, content: string) =>
+    api
+      .post("files/content", { json: { path, content } })
+      .json<FileOperationResult>(),
+
   createFolder: (path: string, name: string) =>
     api
       .post("files/folder", { json: { path, name } })

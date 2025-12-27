@@ -4,6 +4,7 @@ import {
   Copy,
   Download,
   FilePlus,
+  FileText,
   FolderOpen,
   FolderPlus,
   Info,
@@ -14,8 +15,9 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { filesApi } from "../../lib/api";
-import { getFileName } from "../../lib/utils";
+import { getFileName, isTextFile } from "../../lib/utils";
 import { useBookmarkStore } from "../../stores/bookmarkStore";
 import { useFileStore } from "../../stores/fileStore";
 import { useSelectionStore } from "../../stores/selectionStore";
@@ -24,6 +26,7 @@ import { toast } from "../common/Toast";
 
 export function FileContextMenu() {
   const menuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const [adjustedPosition, setAdjustedPosition] = useState<{
     x: number;
     y: number;
@@ -45,7 +48,7 @@ export function FileContextMenu() {
     getClipboardInfo,
     clearClipboard
   } = useSelectionStore();
-  const { currentPath, navigateToPath, refresh } = useFileStore();
+  const { files, currentPath, navigateToPath, refresh } = useFileStore();
   const { addBookmark } = useBookmarkStore();
 
   // Reset adjusted position when context menu opens
@@ -126,6 +129,13 @@ export function FileContextMenu() {
     }
     closeContextMenu();
   }, [contextMenu.targetPath, navigateToPath, closeContextMenu]);
+
+  const handleOpenInEditor = useCallback(() => {
+    if (contextMenu.targetPath) {
+      navigate(`/editor?path=${encodeURIComponent(contextMenu.targetPath)}`);
+    }
+    closeContextMenu();
+  }, [contextMenu.targetPath, navigate, closeContextMenu]);
 
   const handleDownload = useCallback(() => {
     const paths = getSelectedPaths();
@@ -254,6 +264,15 @@ export function FileContextMenu() {
   const isMultiple = selectedCount > 1;
   const canPaste = hasClipboard();
 
+  // Check if the target file is a text file
+  const targetFile = contextMenu.targetPath
+    ? files.find((f) => f.path === contextMenu.targetPath)
+    : null;
+  const isTargetTextFile =
+    targetFile && !targetFile.isDirectory
+      ? isTextFile(targetFile.mimeType, targetFile.extension, targetFile.name)
+      : false;
+
   // Use adjusted position if available, otherwise use original position
   const x = adjustedPosition?.x ?? contextMenu.x;
   const y = adjustedPosition?.y ?? contextMenu.y;
@@ -268,6 +287,14 @@ export function FileContextMenu() {
       {contextMenu.type === "folder" && (
         <button onClick={handleOpen} className="context-menu-item">
           <FolderOpen className="h-4 w-4" />
+          Open
+        </button>
+      )}
+
+      {/* Text file open option */}
+      {contextMenu.type === "file" && isTargetTextFile && !isMultiple && (
+        <button onClick={handleOpenInEditor} className="context-menu-item">
+          <FileText className="h-4 w-4" />
           Open
         </button>
       )}

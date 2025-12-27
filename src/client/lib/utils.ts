@@ -343,6 +343,53 @@ export function isAudio(mimeType: string | null): boolean {
 }
 
 /**
+ * Check if a file is an editable text file
+ */
+export function isTextFile(
+  mimeType: string | null,
+  extension: string,
+  filename?: string
+): boolean {
+  if (mimeType?.startsWith("text/")) return true;
+
+  // Check for .env files (including .env.local, .env.production, etc.)
+  if (filename) {
+    const name = filename.toLowerCase();
+    if (name === ".env" || name.startsWith(".env.")) {
+      return true;
+    }
+  }
+
+  const textExtensions = [
+    "txt",
+    "md",
+    "json",
+    "yml",
+    "yaml",
+    "xml",
+    "html",
+    "css",
+    "js",
+    "ts",
+    "jsx",
+    "tsx",
+    "sh",
+    "bash",
+    "zsh",
+    "conf",
+    "ini",
+    "log",
+    "env",
+    "sql",
+    "gitignore",
+    "dockerfile",
+    "py"
+  ];
+
+  return textExtensions.includes(extension.toLowerCase());
+}
+
+/**
  * Sleep for a specified duration
  */
 export function sleep(ms: number): Promise<void> {

@@ -206,6 +206,72 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
   )
 
   /**
+   * GET /api/files/content
+   * Get file content as text
+   */
+  .get(
+    "/content",
+    async ({ query, set }) => {
+      const { path } = query;
+
+      if (!path) {
+        set.status = 400;
+        return { error: "Path is required" };
+      }
+
+      try {
+        const result = await fileService.readFileContent(path);
+
+        if (!result) {
+          set.status = 404;
+          return { error: "File not found" };
+        }
+
+        return result;
+      } catch (error) {
+        set.status = 400;
+        return { error: (error as Error).message };
+      }
+    },
+    {
+      query: t.Object({
+        path: t.String()
+      })
+    }
+  )
+
+  /**
+   * POST /api/files/content
+   * Save file content
+   */
+  .post(
+    "/content",
+    async ({ body, set }) => {
+      const { path, content } = body;
+
+      if (!path || content === undefined) {
+        set.status = 400;
+        return { error: "Path and content are required" };
+      }
+
+      const result = await fileService.saveFileContent(path, content);
+
+      if (!result.success) {
+        set.status = 400;
+        return { error: result.error };
+      }
+
+      return result;
+    },
+    {
+      body: t.Object({
+        path: t.String(),
+        content: t.String()
+      })
+    }
+  )
+
+  /**
    * GET /api/files/thumbnail
    * Get thumbnail for an image
    */

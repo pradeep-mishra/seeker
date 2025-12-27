@@ -9,6 +9,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import SettingsPage from "./pages/SettingsPage";
 import SetupPage from "./pages/SetupPage";
+import TextEditorPage from "./pages/TextEditorPage";
 import UserManagementPage from "./pages/UserManagementPage";
 
 // Components
@@ -115,6 +116,7 @@ export default function App() {
           }>
           <Route index element={<BrowserPage />} />
           <Route path="browse/*" element={<BrowserPage />} />
+          <Route path="editor" element={<TextEditorPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="users" element={<UserManagementPage />} />
         </Route>

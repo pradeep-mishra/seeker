@@ -1,9 +1,16 @@
 // src/client/components/files/FileThumbnailView.tsx
 import { File, FileText, Folder, Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { FileItem } from "../../lib/api";
 import { filesApi } from "../../lib/api";
-import { isImage, isModifierPressed, isPdf, isVideo } from "../../lib/utils";
+import {
+  isImage,
+  isModifierPressed,
+  isPdf,
+  isTextFile,
+  isVideo
+} from "../../lib/utils";
 import { useFileStore } from "../../stores/fileStore";
 import { useSelectionStore } from "../../stores/selectionStore";
 import { useUIStore } from "../../stores/uiStore";
@@ -13,6 +20,7 @@ interface FileThumbnailViewProps {
 }
 
 export function FileThumbnailView({ files }: FileThumbnailViewProps) {
+  const navigate = useNavigate();
   const { navigateToPath } = useFileStore();
   const { select, toggleSelect, rangeSelect, isSelected } = useSelectionStore();
   const { openContextMenu } = useUIStore();
@@ -48,11 +56,13 @@ export function FileThumbnailView({ files }: FileThumbnailViewProps) {
     (item: FileItem) => {
       if (item.isDirectory) {
         navigateToPath(item.path);
+      } else if (isTextFile(item.mimeType, item.extension, item.name)) {
+        navigate(`/editor?path=${encodeURIComponent(item.path)}`);
       } else {
         window.open(filesApi.download(item.path), "_blank");
       }
     },
-    [navigateToPath]
+    [navigateToPath, navigate]
   );
 
   const handleContextMenu = useCallback(

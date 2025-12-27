@@ -11,12 +11,15 @@ import {
   Folder
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { FileItem } from "../../lib/api";
+import { filesApi } from "../../lib/api";
 import {
   formatDate,
   formatFileSize,
   getFileIconType,
-  isModifierPressed
+  isModifierPressed,
+  isTextFile
 } from "../../lib/utils";
 import { useFileStore } from "../../stores/fileStore";
 import { useSelectionStore } from "../../stores/selectionStore";
@@ -27,6 +30,7 @@ interface FileListViewProps {
 }
 
 export function FileListView({ files }: FileListViewProps) {
+  const navigate = useNavigate();
   const { navigateToPath } = useFileStore();
   const { select, toggleSelect, rangeSelect, isSelected } = useSelectionStore();
   const { openContextMenu } = useUIStore();
@@ -62,15 +66,14 @@ export function FileListView({ files }: FileListViewProps) {
     (item: FileItem) => {
       if (item.isDirectory) {
         navigateToPath(item.path);
+      } else if (isTextFile(item.mimeType, item.extension, item.name)) {
+        navigate(`/editor?path=${encodeURIComponent(item.path)}`);
       } else {
         // TODO: Open file preview or download
-        window.open(
-          `/api/files/download?path=${encodeURIComponent(item.path)}`,
-          "_blank"
-        );
+        window.open(filesApi.download(item.path), "_blank");
       }
     },
-    [navigateToPath]
+    [navigateToPath, navigate]
   );
 
   const handleContextMenu = useCallback(

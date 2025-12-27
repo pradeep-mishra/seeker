@@ -432,14 +432,7 @@ export default function BrowserPage() {
     );
   }
 
-  // Render error state
-  if (error) {
-    return (
-      <EmptyStates type="error" errorMessage={error} onRefresh={refresh} />
-    );
-  }
-
-  // Render file browser
+  // Render file browser (with error state if applicable)
   return (
     <div
       className="h-full flex flex-col relative"
@@ -454,19 +447,23 @@ export default function BrowserPage() {
       {/* Warning banner for large directories */}
       {warning && <WarningBanner message={warning} />}
 
-      {/* File list */}
-      <FileListContainer
-        files={files}
-        isLoading={isLoading}
-        hasMore={hasMore}
-        viewMode={viewMode}
-        containerRef={containerRef}
-        loadMoreTriggerRef={loadMoreTriggerRef}
-        onContextMenu={handleBackgroundContextMenu}
-        onMouseDown={handleMouseDown}
-        onCreateFolder={openCreateFolderDialog}
-        searchQuery={searchQuery}
-      />
+      {/* Error state or File list */}
+      {error ? (
+        <EmptyStates type="error" errorMessage={error} onRefresh={refresh} />
+      ) : (
+        <FileListContainer
+          files={files}
+          isLoading={isLoading}
+          hasMore={hasMore}
+          viewMode={viewMode}
+          containerRef={containerRef}
+          loadMoreTriggerRef={loadMoreTriggerRef}
+          onContextMenu={handleBackgroundContextMenu}
+          onMouseDown={handleMouseDown}
+          onCreateFolder={openCreateFolderDialog}
+          searchQuery={searchQuery}
+        />
+      )}
 
       {/* Drag and Drop Overlay */}
       {isDraggingOver && (

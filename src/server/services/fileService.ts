@@ -974,6 +974,63 @@ export class FileService {
       return false;
     }
   }
+
+  /**
+   * Read file content as text
+   */
+  async readFileContent(
+    path: string
+  ): Promise<{ content: string; mimeType: string } | null> {
+    const validation = await this.validatePath(path);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+
+    try {
+      const fileStat = await stat(path);
+      if (fileStat.isDirectory()) {
+        throw new Error("Cannot read directory as file");
+      }
+
+      const bunFile = Bun.file(path);
+      const content = await bunFile.text();
+      const mimeType = getMimeType(basename(path));
+
+      return { content, mimeType };
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Save file content
+   */
+  async saveFileContent(
+    path: string,
+    content: string
+  ): Promise<FileOperationResult> {
+    const validation = await this.validatePath(path);
+    if (!validation.valid) {
+      return { success: false, error: validation.error };
+    }
+
+    try {
+      // Check if file exists to ensure we're not creating a new file where we shouldn't
+      // although save usually implies create if not exists, but let's check basic permissions/path validity above
+
+      await Bun.write(path, content);
+
+      // Invalidate cache for parent directory (size/time might change)
+      this.directoryCache.delete(dirname(path));
+
+      return { success: true, path };
+    } catch (error) {
+      return { success: false, error: "Failed to save file" };
+    }
+  }
 }
 
 // Export singleton instance

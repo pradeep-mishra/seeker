@@ -7,11 +7,14 @@ A beautiful, fast, and secure web-based file browser built with Bun, Elysia, and
 - **Blazing Fast** - Built on Bun runtime for maximum performance
 - **Modern UI** - Clean, responsive interface with dark/light themes
 - **Multiple Views** - List, thumbnail, and card views for your files
+- **Built-in Text Editor** - Edit text files directly with syntax highlighting for JSON, YAML, YML, ENV, and more
+- **Image Preview** - View images in original size with zoom in/out controls
+- **PDF Thumbnails** - Automatic thumbnail generation for PDF documents
 - **Secure** - Session-based authentication with HTTP-only cookies
 - **Multi-user** - User management with admin controls
 - **Bookmarks** - Pin frequently accessed folders
 - **Smart Search** - Quick file and folder navigation
-- **Thumbnails** - Automatic image thumbnail generation
+- **Thumbnails** - Automatic image and PDF thumbnail generation
 - **File Upload** - Chunked uploads with resume support
 - **Multiple Mounts** - Access different directories through a single interface
 - **Health Checks** - Built-in health monitoring
@@ -62,6 +65,39 @@ Start the container:
 ```bash
 docker-compose up -d
 ```
+
+## Key Features Explained
+
+### Text Editor
+
+Seeker includes a powerful built-in text editor with syntax highlighting support:
+
+- **Supported Formats**: JSON, YAML, YML, ENV, TXT, MD, JS, TS, JSX, TSX, CSS, HTML, XML, and more
+- **Syntax Highlighting**: CodeMirror-powered editor with language-specific highlighting
+- **Direct Editing**: Edit files in-place without downloading
+- **Direct-save**: Changes are saved directly to your files
+- **Line Numbers**: Easy navigation with line numbering
+
+Simply click on any text file to open it in the editor.
+
+### Image Preview
+
+View your images with advanced preview capabilities:
+
+- **Full-Size Viewing**: See images in their original resolution
+- **Zoom Controls**: Zoom in and out for detailed inspection
+- **Pan Support**: Navigate around zoomed images
+- **Next/Previous Navigation**: Quickly browse through images using keyboard arrows or on-screen controls
+- **Supported Formats**: JPEG, PNG, GIF, WebP, SVG, and more
+- **Fast Loading**: Optimized image delivery
+- **Seamless Browsing**: Navigate through all images in a folder without returning to the file list
+
+### PDF Support
+
+Handle PDF documents with ease:
+
+- **Thumbnail Generation**: Automatic thumbnail creation for PDF files
+- **Fast Access**: Efficiently browse folders containing PDF documents
 
 ## Configuration
 

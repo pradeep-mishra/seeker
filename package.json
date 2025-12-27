@@ -1,6 +1,6 @@
 {
   "name": "seeker",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A native-feeling web-based file browser for home servers",
   "type": "module",
   "scripts": {
@@ -20,8 +20,11 @@
     "docker:setup": "docker buildx use multiplatform 2>/dev/null || docker buildx create --name multiplatform --use",
     "docker:build": "docker buildx build --platform linux/amd64,linux/arm64 -t ipradeepmishra/seeker:$(node -p \"require('./package.json').version\") -t ipradeepmishra/seeker:latest --load .",
     "docker:push": "docker buildx build --platform linux/amd64,linux/arm64 -t ipradeepmishra/seeker:$(node -p \"require('./package.json').version\") -t ipradeepmishra/seeker:latest --push .",
+    "docker:test-push": "docker buildx build --platform linux/amd64,linux/arm64 -t ipradeepmishra/seeker:testing --push .",
     "docker:publish": "bun run docker:setup && bun run docker:push",
-    "docker:inspect": "docker buildx imagetools inspect ipradeepmishra/seeker:latest"
+    "docker:test-publish": "bun run docker:setup && bun run docker:test-push",
+    "docker:inspect": "docker buildx imagetools inspect ipradeepmishra/seeker:latest",
+    "update-package-lock": "npm install --package-lock-only"
   },
   "dependencies": {
     "@codemirror/lang-json": "^6.0.2",
@@ -34,12 +37,10 @@
     "@elysiajs/static": "^1.4.7",
     "@tanstack/react-virtual": "^3.13.13",
     "@uiw/react-codemirror": "^4.25.4",
-    "canvas": "^3.2.0",
     "drizzle-orm": "^0.45.1",
     "elysia": "^1.4.19",
     "ky": "^1.14.1",
     "lucide-react": "^0.562.0",
-    "pdfjs-dist": "^5.4.449",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.11.0",

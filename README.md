@@ -14,6 +14,7 @@ A modern, native-feeling web-based file browser for home servers. Seeker provide
 - **Batch Operations** - Select multiple files for bulk operations
 - **Upload Support** - Drag-and-drop uploads with progress tracking
 - **Download** - Single or multiple file downloads
+- **Built-in Text Editor** - Edit text files directly with syntax highlighting for JSON, YAML, YML, ENV, and more
 
 ### Authentication & Security
 
@@ -40,14 +41,51 @@ A modern, native-feeling web-based file browser for home servers. Seeker provide
 
 ### Media Support
 
+- **Image Preview** - View images in original size with zoom in/out controls
+- **Next/Previous Navigation** - Browse through images using keyboard arrows or on-screen controls
 - **Image Thumbnails** - Automatic thumbnail generation for images
+- **PDF Thumbnails** - Automatic thumbnail generation for PDF documents
 - **Thumbnail Caching** - Cached thumbnails in separate database for performance
+- **Supported Formats** - JPEG, PNG, GIF, WebP, SVG, and more
 
 ### Storage Management
 
 - **Multiple Mounts** - Configure multiple storage locations
 - **Storage Stats** - View used/free space for each mount
 - **Mount Management** - Admin-only mount configuration
+
+## Key Features Explained
+
+### Built-in Text Editor
+
+Seeker includes a powerful CodeMirror-powered text editor with syntax highlighting:
+
+- **Supported Formats**: JSON, YAML, YML, ENV, TXT, MD, JS, TS, JSX, TSX, CSS, HTML, XML, and more
+- **Syntax Highlighting**: Language-specific highlighting for better code readability
+- **Direct Editing**: Edit files in-place without downloading
+- **Direct-save**: Changes are saved directly to your files
+- **Line Numbers**: Easy navigation with line numbering
+
+Simply click on any text file to open it in the editor.
+
+### Image Preview
+
+View your images with advanced preview capabilities:
+
+- **Full-Size Viewing**: See images in their original resolution
+- **Zoom Controls**: Zoom in and out for detailed inspection
+- **Pan Support**: Navigate around zoomed images
+- **Next/Previous Navigation**: Quickly browse through images using keyboard arrows or on-screen controls
+- **Supported Formats**: JPEG, PNG, GIF, WebP, SVG, and more
+- **Fast Loading**: Optimized image delivery
+- **Seamless Browsing**: Navigate through all images in a folder without returning to the file list
+
+### PDF Support
+
+Handle PDF documents with ease:
+
+- **Thumbnail Generation**: Automatic thumbnail creation for PDF files
+- **Fast Access**: Efficiently browse folders containing PDF documents
 
 ## Tech Stack
 
@@ -63,14 +101,15 @@ A modern, native-feeling web-based file browser for home servers. Seeker provide
 
 ### Frontend
 
-| Technology                               | Purpose             |
-| ---------------------------------------- | ------------------- |
-| [React 19](https://react.dev)            | UI framework        |
-| [TypeScript](https://typescriptlang.org) | Type safety         |
-| [Zustand](https://zustand-demo.pmnd.rs)  | State management    |
-| [TailwindCSS](https://tailwindcss.com)   | Utility-first CSS   |
-| [Lucide Icons](https://lucide.dev)       | Beautiful icons     |
-| [React Router](https://reactrouter.com)  | Client-side routing |
+| Technology                               | Purpose               |
+| ---------------------------------------- | --------------------- |
+| [React 19](https://react.dev)            | UI framework          |
+| [TypeScript](https://typescriptlang.org) | Type safety           |
+| [Zustand](https://zustand-demo.pmnd.rs)  | State management      |
+| [TailwindCSS](https://tailwindcss.com)   | Utility-first CSS     |
+| [CodeMirror](https://codemirror.net)     | Code editor component |
+| [Lucide Icons](https://lucide.dev)       | Beautiful icons       |
+| [React Router](https://reactrouter.com)  | Client-side routing   |
 
 ### Build & Deploy
 
@@ -89,15 +128,13 @@ A modern, native-feeling web-based file browser for home servers. Seeker provide
 ### 1. Create docker-compose.yml
 
 ```yaml
-version: "3.8"
-
 services:
   seeker:
     image: seeker:latest
     container_name: seeker
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "7335:3000"
     volumes:
       # Configuration and database storage
       - ./config:/config
@@ -106,9 +143,8 @@ services:
       # Add more mounts as needed
       # - /mnt/storage:/storage
     environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - DEFAULT_MOUNT=/data # Optional: auto-configure this mount on first run
+      - UID=1000 # optional, default is 1000
+      - GID=1000 # optional, default is 1000
 ```
 
 ### 2. Start the Container
@@ -202,8 +238,10 @@ Seeker uses two SQLite databases stored in the config directory:
 | GET    | `/api/files`           | List directory contents |
 | GET    | `/api/files/search`    | Search files            |
 | GET    | `/api/files/download`  | Download file           |
+| GET    | `/api/files/read`      | Read text file content  |
 | GET    | `/api/files/thumbnail` | Get image thumbnail     |
 | POST   | `/api/files/upload`    | Upload files            |
+| POST   | `/api/files/write`     | Write text file content |
 | POST   | `/api/files/folder`    | Create folder           |
 | POST   | `/api/files/rename`    | Rename file/folder      |
 | POST   | `/api/files/copy`      | Copy files              |

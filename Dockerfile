@@ -28,10 +28,11 @@ FROM oven/bun:1.3-alpine AS runner
 	
 WORKDIR /app
 
-# Install runtime dependencies for sharp
+# Install runtime dependencies for sharp and PDF processing
 # Only install runtime libraries, not dev/build packages
 RUN apk add --no-cache \
 	vips \
+	poppler-utils \
 	wget
 
 # Define non-root user UID and GID

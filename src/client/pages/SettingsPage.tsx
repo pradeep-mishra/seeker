@@ -257,7 +257,7 @@ export default function SettingsPage() {
           <h2 className="text-lg font-semibold text-content mb-4">About</h2>
           <div className="bg-surface border border-border rounded-lg p-4">
             <p className="text-content">Seeker File Browser</p>
-            <p className="text-sm text-content-secondary">Version 0.0.1</p>
+            <p className="text-sm text-content-secondary">Version 0.1.0</p>
           </div>
         </section>
       </div>

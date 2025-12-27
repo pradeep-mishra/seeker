@@ -1,11 +1,10 @@
 // src/client/pages/LoginPage.tsx
+import { FolderSearch, Lock, User } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { useAuthStore } from "../stores/authStore";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
-import { FolderSearch, User, Lock } from "lucide-react";
 import { toast } from "../components/common/Toast";
+import { useAuthStore } from "../stores/authStore";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -39,7 +38,9 @@ export default function LoginPage() {
             <FolderSearch className="w-8 h-8 text-accent" />
           </div>
           <h1 className="text-2xl font-bold text-content">Seeker</h1>
-          <p className="text-content-secondary mt-1">Home Server File Browser</p>
+          <p className="text-content-secondary mt-1">
+            Home Server File Browser
+          </p>
         </div>
 
         {/* Login form */}
@@ -74,11 +75,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            <Button
-              type="submit"
-              className="w-full"
-              isLoading={isLoading}
-            >
+            <Button type="submit" className="w-full" isLoading={isLoading}>
               Sign in
             </Button>
           </form>
@@ -86,7 +83,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-content-tertiary text-sm mt-6">
-          Seeker v1.0.0
+          Seeker v0.1.0
         </p>
       </div>
     </div>

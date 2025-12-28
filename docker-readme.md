@@ -9,6 +9,7 @@ A beautiful, fast, and secure web-based file browser built with Bun, Elysia, and
 - **Multiple Views** - List, thumbnail, and card views for your files
 - **Built-in Text Editor** - Edit text files directly with syntax highlighting for JSON, YAML, YML, ENV, and more
 - **Image Preview** - View images in original size with zoom in/out controls
+- **Video Player** - Built-in video player with full playback controls and streaming support
 - **PDF Thumbnails** - Automatic thumbnail generation for PDF documents
 - **Secure** - Session-based authentication with HTTP-only cookies
 - **Multi-user** - User management with admin controls
@@ -91,6 +92,19 @@ View your images with advanced preview capabilities:
 - **Supported Formats**: JPEG, PNG, GIF, WebP, SVG, and more
 - **Fast Loading**: Optimized image delivery
 - **Seamless Browsing**: Navigate through all images in a folder without returning to the file list
+
+### Video Player
+
+Watch your videos with a professional video player:
+
+- **Built-in Playback**: Play videos directly in your browser without downloading
+- **Full Controls**: Play, pause, seek, volume, fullscreen, and picture-in-picture
+- **Streaming Support**: Efficient range request streaming for smooth playback and seeking
+- **Format Support**: MP4, WebM, MOV (QuickTime), and other browser-supported formats
+- **Keyboard Shortcuts**: Space to play/pause, arrow keys for seeking, M to mute, F for fullscreen
+- **Next/Previous Navigation**: Browse through all videos in a folder seamlessly
+- **Mobile-Friendly**: Touch gestures and inline playback on mobile devices
+- **Quality Auto-Detection**: Automatic format compatibility warnings for unsupported codecs
 
 ### PDF Support
 
@@ -322,6 +336,7 @@ docker start seeker
 - **[Bun](https://bun.sh/)** - JavaScript runtime, bundler & package manager
 - **[Elysia](https://elysiajs.com/)** - Fast web framework for Bun
 - **[React](https://react.dev/)** - UI framework
+- **[Vidstack](https://vidstack.io/)** - Professional video player
 - **[Drizzle ORM](https://orm.drizzle.team/)** - TypeScript ORM
 - **[SQLite](https://www.sqlite.org/)** - Embedded database
 - **[Sharp](https://sharp.pixelplumbing.com/)** - High-performance image processing

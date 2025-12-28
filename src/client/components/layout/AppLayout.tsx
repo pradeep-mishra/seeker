@@ -1,6 +1,7 @@
 // src/client/components/layout/AppLayout.tsx
 import { Outlet } from "react-router-dom";
 import { useUIStore } from "../../stores/uiStore";
+import { AboutDialog } from "../dialogs/AboutDialog";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 
@@ -22,6 +23,9 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Global Dialogs */}
+      <AboutDialog />
     </div>
   );
 }

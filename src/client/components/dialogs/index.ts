@@ -1,5 +1,6 @@
 // src/client/components/dialogs/index.ts
 
+export { AboutDialog } from "./AboutDialog";
 export { CreateFileDialog } from "./CreateFileDialog";
 export { CreateFolderDialog } from "./CreateFolderDialog";
 export { DeleteDialog } from "./DeleteDialog";

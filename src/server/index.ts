@@ -3,6 +3,7 @@ import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { existsSync } from "fs";
 import { join } from "path";
+import pkg from "../../package.json";
 import { initializeDatabase } from "./db";
 import {
   authRoutes,
@@ -20,6 +21,7 @@ const PORT = parseInt(process.env.PORT || "3000", 10);
 const HOST = process.env.HOST || "0.0.0.0";
 const NODE_ENV = process.env.NODE_ENV || "development";
 const IS_PRODUCTION = NODE_ENV === "production";
+const VERSION = pkg.version;
 
 /**
  * Initialize the application
@@ -54,7 +56,7 @@ function createApp(): Elysia {
   app.get("/health", () => ({
     status: "ok",
     timestamp: new Date().toISOString(),
-    version: "0.1.0"
+    version: VERSION
   }));
 
   // API routes

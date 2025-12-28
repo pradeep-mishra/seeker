@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
 import { toast } from "../components/common/Toast";
+import { APP_VERSION } from "../lib/version";
 import { useAuthStore } from "../stores/authStore";
 
 export default function LoginPage() {
@@ -83,7 +84,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-content-tertiary text-sm mt-6">
-          Seeker v0.1.0
+          Seeker v{APP_VERSION}
         </p>
       </div>
     </div>

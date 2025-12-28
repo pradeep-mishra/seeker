@@ -1,7 +1,7 @@
 {
   "name": "seeker",
-  "version": "0.1.0",
-  "description": "A native-feeling web-based file browser for home servers",
+  "version": "0.1.1",
+  "description": "A web-based file browser for home servers",
   "type": "module",
   "scripts": {
     "dev": "bun run dev:server & bun run dev:client",

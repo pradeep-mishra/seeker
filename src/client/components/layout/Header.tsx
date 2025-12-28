@@ -5,6 +5,7 @@ import {
   CircleUserRound,
   FolderSearch,
   Grid,
+  Info,
   LayoutGrid,
   List,
   LogOut,
@@ -33,7 +34,8 @@ export function Header() {
     setSortBy,
     sortOrder,
     toggleSortOrder,
-    toggleSidebar
+    toggleSidebar,
+    openAboutDialog
   } = useUIStore();
   const {
     currentPath,
@@ -327,6 +329,16 @@ export function Header() {
                   User Management
                 </button>
               )}
+
+              <button
+                onClick={() => {
+                  setShowUserMenu(false);
+                  openAboutDialog();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-content hover:bg-surface-hover transition-colors">
+                <Info className="h-4 w-4 text-content-secondary" />
+                About
+              </button>
             </div>
 
             {/* Logout */}

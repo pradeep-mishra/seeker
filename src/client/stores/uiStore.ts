@@ -29,6 +29,7 @@ interface DialogState {
   };
   settings: boolean;
   getInfo: { isOpen: boolean; path: string };
+  about: boolean;
 }
 
 interface UIState {
@@ -102,6 +103,8 @@ interface UIState {
   closeSettingsDialog: () => void;
   openGetInfoDialog: (path: string) => void;
   closeGetInfoDialog: () => void;
+  openAboutDialog: () => void;
+  closeAboutDialog: () => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -138,7 +141,8 @@ export const useUIStore = create<UIState>()(
           action: "copy"
         },
         settings: false,
-        getInfo: { isOpen: false, path: "" }
+        getInfo: { isOpen: false, path: "" },
+        about: false
       },
 
       isSettingsLoading: false,
@@ -371,6 +375,18 @@ export const useUIStore = create<UIState>()(
       closeGetInfoDialog: () => {
         set({
           dialogs: { ...get().dialogs, getInfo: { isOpen: false, path: "" } }
+        });
+      },
+
+      openAboutDialog: () => {
+        set({
+          dialogs: { ...get().dialogs, about: true }
+        });
+      },
+
+      closeAboutDialog: () => {
+        set({
+          dialogs: { ...get().dialogs, about: false }
         });
       }
     }),

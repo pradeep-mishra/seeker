@@ -50,17 +50,17 @@ export function VideoPlayer({
 
   // Handle provider setup
   const handleProviderSetup = useCallback((provider: MediaProviderAdapter) => {
-    console.log("[VideoPlayer] Provider setup:", provider?.type);
+    //console.log("[VideoPlayer] Provider setup:", provider?.type);
   }, []);
 
   // Handle when video can play
   const handleCanPlay = useCallback(() => {
-    console.log("[VideoPlayer] Can play");
+    //console.log("[VideoPlayer] Can play");
   }, []);
 
   // Handle loaded metadata
   const handleLoadedMetadata = useCallback(() => {
-    console.log("[VideoPlayer] Loaded metadata");
+    //console.log("[VideoPlayer] Loaded metadata");
     const player = playerRef.current;
     if (player && onLoadedMetadata) {
       const { duration, width, height } = player.state;

@@ -42,11 +42,12 @@ A modern, native-feeling web-based file browser for home servers. Seeker provide
 ### Media Support
 
 - **Image Preview** - View images in original size with zoom in/out controls
-- **Next/Previous Navigation** - Browse through images using keyboard arrows or on-screen controls
+- **Video Player** - Built-in video player with full playback controls and streaming support
+- **Next/Previous Navigation** - Browse through images and videos using keyboard arrows or on-screen controls
 - **Image Thumbnails** - Automatic thumbnail generation for images
 - **PDF Thumbnails** - Automatic thumbnail generation for PDF documents
 - **Thumbnail Caching** - Cached thumbnails in separate database for performance
-- **Supported Formats** - JPEG, PNG, GIF, WebP, SVG, and more
+- **Supported Formats** - Images: JPEG, PNG, GIF, WebP, SVG | Videos: MP4, WebM, MOV
 
 ### Storage Management
 
@@ -80,6 +81,20 @@ View your images with advanced preview capabilities:
 - **Fast Loading**: Optimized image delivery
 - **Seamless Browsing**: Navigate through all images in a folder without returning to the file list
 
+### Video Player
+
+Watch your videos with a professional video player powered by Vidstack:
+
+- **Built-in Playback**: Play videos directly in your browser without downloading
+- **Full Controls**: Play, pause, seek, volume, fullscreen, and picture-in-picture
+- **Streaming Support**: Efficient range request streaming for smooth playback and seeking
+- **Format Support**: MP4, WebM, MOV (QuickTime), and other browser-supported formats
+- **Keyboard Shortcuts**: Space to play/pause, arrow keys for seeking, M to mute, F for fullscreen
+- **Next/Previous Navigation**: Browse through all videos in a folder seamlessly
+- **Mobile-Friendly**: Touch gestures and inline playback on mobile devices
+- **Quality Auto-Detection**: Automatic format compatibility warnings for unsupported codecs
+- **Volume Persistence**: Remembers your volume preference across videos
+
 ### PDF Support
 
 Handle PDF documents with ease:
@@ -107,6 +122,7 @@ Handle PDF documents with ease:
 | [TypeScript](https://typescriptlang.org) | Type safety           |
 | [Zustand](https://zustand-demo.pmnd.rs)  | State management      |
 | [TailwindCSS](https://tailwindcss.com)   | Utility-first CSS     |
+| [Vidstack](https://vidstack.io)          | Video player          |
 | [CodeMirror](https://codemirror.net)     | Code editor component |
 | [Lucide Icons](https://lucide.dev)       | Beautiful icons       |
 | [React Router](https://reactrouter.com)  | Client-side routing   |
@@ -233,20 +249,21 @@ Seeker uses two SQLite databases stored in the config directory:
 
 ### Files
 
-| Method | Endpoint               | Description             |
-| ------ | ---------------------- | ----------------------- |
-| GET    | `/api/files`           | List directory contents |
-| GET    | `/api/files/search`    | Search files            |
-| GET    | `/api/files/download`  | Download file           |
-| GET    | `/api/files/read`      | Read text file content  |
-| GET    | `/api/files/thumbnail` | Get image thumbnail     |
-| POST   | `/api/files/upload`    | Upload files            |
-| POST   | `/api/files/write`     | Write text file content |
-| POST   | `/api/files/folder`    | Create folder           |
-| POST   | `/api/files/rename`    | Rename file/folder      |
-| POST   | `/api/files/copy`      | Copy files              |
-| POST   | `/api/files/move`      | Move files              |
-| DELETE | `/api/files`           | Delete files            |
+| Method | Endpoint               | Description                     |
+| ------ | ---------------------- | ------------------------------- |
+| GET    | `/api/files`           | List directory contents         |
+| GET    | `/api/files/search`    | Search files                    |
+| GET    | `/api/files/download`  | Download file                   |
+| GET    | `/api/files/stream`    | Stream video with range support |
+| GET    | `/api/files/read`      | Read text file content          |
+| GET    | `/api/files/thumbnail` | Get image thumbnail             |
+| POST   | `/api/files/upload`    | Upload files                    |
+| POST   | `/api/files/write`     | Write text file content         |
+| POST   | `/api/files/folder`    | Create folder                   |
+| POST   | `/api/files/rename`    | Rename file/folder              |
+| POST   | `/api/files/copy`      | Copy files                      |
+| POST   | `/api/files/move`      | Move files                      |
+| DELETE | `/api/files`           | Delete files                    |
 
 ### Mounts (Admin Only)
 

@@ -1,4 +1,3 @@
-// src/server/middleware/auth.ts
 import { Elysia } from "elysia";
 import type { Session, User } from "../db/schema";
 import { authService } from "../services";

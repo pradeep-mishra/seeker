@@ -1,4 +1,3 @@
-// src/server/routes/settings.ts
 import { Elysia, t } from "elysia";
 import { requireAuth } from "../middleware/auth";
 import { settingsService } from "../services";
@@ -37,21 +36,25 @@ export const settingsRoutes = new Elysia({ prefix: "/settings" })
     },
     {
       body: t.Object({
-        viewMode: t.Optional(t.Union([
-          t.Literal("list"),
-          t.Literal("thumbnail"),
-          t.Literal("card"),
-        ])),
-        sortBy: t.Optional(t.Union([
-          t.Literal("name"),
-          t.Literal("date"),
-          t.Literal("size"),
-          t.Literal("type"),
-        ])),
+        viewMode: t.Optional(
+          t.Union([
+            t.Literal("list"),
+            t.Literal("thumbnail"),
+            t.Literal("card")
+          ])
+        ),
+        sortBy: t.Optional(
+          t.Union([
+            t.Literal("name"),
+            t.Literal("date"),
+            t.Literal("size"),
+            t.Literal("type")
+          ])
+        ),
         sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
         showHiddenFiles: t.Optional(t.Boolean()),
-        theme: t.Optional(t.String()),
-      }),
+        theme: t.Optional(t.String())
+      })
     }
   )
 

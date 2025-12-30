@@ -1,4 +1,3 @@
-// src/server/services/fileService.ts
 import { $ } from "bun";
 import { constants } from "fs";
 import { access, mkdir, readdir, rename, rm, stat } from "fs/promises";

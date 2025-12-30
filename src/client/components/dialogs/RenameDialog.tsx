@@ -1,13 +1,12 @@
-// src/client/components/dialogs/RenameDialog.tsx
-import { useState, useEffect } from "react";
+import { Pencil } from "lucide-react";
+import { useEffect, useState } from "react";
+import { filesApi } from "../../lib/api";
+import { useFileStore } from "../../stores/fileStore";
+import { useUIStore } from "../../stores/uiStore";
+import { Button } from "../common/Button";
 import { Dialog } from "../common/Dialog";
 import { Input } from "../common/Input";
-import { Button } from "../common/Button";
-import { useUIStore } from "../../stores/uiStore";
-import { useFileStore } from "../../stores/fileStore";
-import { filesApi } from "../../lib/api";
 import { toast } from "../common/Toast";
-import { Pencil } from "lucide-react";
 
 export function RenameDialog() {
   const { dialogs, closeRenameDialog } = useUIStore();
@@ -61,8 +60,7 @@ export function RenameDialog() {
       isOpen={dialogs.rename.isOpen}
       onClose={closeRenameDialog}
       title="Rename"
-      size="sm"
-    >
+      size="sm">
       <form onSubmit={handleSubmit}>
         <Input
           label="New name"
@@ -88,8 +86,7 @@ export function RenameDialog() {
             type="button"
             variant="secondary"
             onClick={closeRenameDialog}
-            disabled={isLoading}
-          >
+            disabled={isLoading}>
             Cancel
           </Button>
           <Button type="submit" isLoading={isLoading}>

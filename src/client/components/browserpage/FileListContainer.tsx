@@ -1,4 +1,3 @@
-// src/client/components/browserpage/FileListContainer.tsx
 import type { FileItem } from "../../lib/api";
 import { LoadingSpinner } from "../common/LoadingScreen";
 import { FileCardView } from "../files/FileCardView";

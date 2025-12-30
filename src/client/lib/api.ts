@@ -1,4 +1,3 @@
-// src/client/lib/api.ts
 import ky, { HTTPError } from "ky";
 
 /**

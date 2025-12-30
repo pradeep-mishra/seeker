@@ -1,4 +1,3 @@
-// src/client/components/browserpage/EmptyFolderState.tsx
 import { Folder, FolderPlus, SearchX } from "lucide-react";
 import { Button } from "../common/Button";
 

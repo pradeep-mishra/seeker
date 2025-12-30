@@ -1,5 +1,3 @@
-// src/client/stores/index.ts
-
 export { useAuthStore } from "./authStore";
 export { useBookmarkStore } from "./bookmarkStore";
 export { useFileStore } from "./fileStore";

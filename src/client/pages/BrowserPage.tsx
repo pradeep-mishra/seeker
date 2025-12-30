@@ -1,4 +1,3 @@
-// src/client/pages/BrowserPage.tsx
 import { FolderUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";

@@ -1,4 +1,3 @@
-// src/client/pages/SettingsPage.tsx
 import {
   ArrowLeft,
   Eye,

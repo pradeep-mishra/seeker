@@ -1,6 +1,5 @@
-// src/server/routes/mounts.ts
 import { Elysia, t } from "elysia";
-import { requireAuth, requireAdmin } from "../middleware/auth";
+import { requireAdmin, requireAuth } from "../middleware/auth";
 import { mountService } from "../services";
 
 /**
@@ -50,8 +49,8 @@ export const mountRoutes = new Elysia({ prefix: "/mounts" })
     },
     {
       params: t.Object({
-        id: t.String(),
-      }),
+        id: t.String()
+      })
     }
   )
 
@@ -80,8 +79,8 @@ export const mountRoutes = new Elysia({ prefix: "/mounts" })
     },
     {
       params: t.Object({
-        id: t.String(),
-      }),
+        id: t.String()
+      })
     }
   )
 
@@ -114,8 +113,8 @@ export const mountRoutes = new Elysia({ prefix: "/mounts" })
     {
       body: t.Object({
         path: t.String(),
-        label: t.String(),
-      }),
+        label: t.String()
+      })
     }
   )
 
@@ -137,11 +136,11 @@ export const mountRoutes = new Elysia({ prefix: "/mounts" })
     },
     {
       params: t.Object({
-        id: t.String(),
+        id: t.String()
       }),
       body: t.Object({
-        label: t.String(),
-      }),
+        label: t.String()
+      })
     }
   )
 
@@ -163,7 +162,7 @@ export const mountRoutes = new Elysia({ prefix: "/mounts" })
     },
     {
       params: t.Object({
-        id: t.String(),
-      }),
+        id: t.String()
+      })
     }
   );

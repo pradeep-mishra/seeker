@@ -1,4 +1,3 @@
-// src/client/components/browserpage/index.ts
 export { EmptyFolderState } from "./EmptyFolderState";
 export { EmptyStates } from "./EmptyStates";
 export { FileListContainer } from "./FileListContainer";

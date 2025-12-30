@@ -1,4 +1,3 @@
-// src/client/components/video/VideoPlayer.tsx
 import "@vidstack/react/player/styles/default/layouts/video.css";
 import "@vidstack/react/player/styles/default/theme.css";
 

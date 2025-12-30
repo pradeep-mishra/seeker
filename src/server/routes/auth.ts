@@ -1,13 +1,12 @@
-// src/server/routes/auth.ts
 import { Elysia, t } from "elysia";
-import { authService } from "../services";
+import type { User } from "../db/schema";
 import {
   authMiddleware,
   requireAuth,
   SESSION_COOKIE_NAME,
-  SESSION_COOKIE_OPTIONS,
+  SESSION_COOKIE_OPTIONS
 } from "../middleware/auth";
-import type { User } from "../db/schema";
+import { authService } from "../services";
 
 /**
  * Authentication routes
@@ -23,7 +22,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     const hasUsers = await authService.hasUsers();
     return {
       hasUsers,
-      requiresSetup: !hasUsers,
+      requiresSetup: !hasUsers
     };
   })
 
@@ -73,7 +72,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         const sessionId = await authService.createSession(result.user.id);
         cookie[SESSION_COOKIE_NAME].set({
           value: sessionId,
-          ...SESSION_COOKIE_OPTIONS,
+          ...SESSION_COOKIE_OPTIONS
         });
 
         return {
@@ -82,9 +81,9 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
             id: result.user.id,
             username: result.user.username,
             isAdmin: result.user.isAdmin,
-            avatar: result.user.avatar,
+            avatar: result.user.avatar
           },
-          autoLoggedIn: true,
+          autoLoggedIn: true
         };
       }
 
@@ -94,16 +93,16 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
           ? {
               id: result.user.id,
               username: result.user.username,
-              isAdmin: result.user.isAdmin,
+              isAdmin: result.user.isAdmin
             }
-          : null,
+          : null
       };
     },
     {
       body: t.Object({
         username: t.String(),
-        password: t.String(),
-      }),
+        password: t.String()
+      })
     }
   )
 
@@ -129,7 +128,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
       // Set cookie
       cookie[SESSION_COOKIE_NAME].set({
         value: sessionId,
-        ...SESSION_COOKIE_OPTIONS,
+        ...SESSION_COOKIE_OPTIONS
       });
 
       return {
@@ -138,15 +137,15 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
           id: result.user.id,
           username: result.user.username,
           isAdmin: result.user.isAdmin,
-          avatar: result.user.avatar,
-        },
+          avatar: result.user.avatar
+        }
       };
     },
     {
       body: t.Object({
         username: t.String(),
-        password: t.String(),
-      }),
+        password: t.String()
+      })
     }
   )
 
@@ -157,7 +156,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
   .post("/logout", async (ctx: any) => {
     const session = ctx.session;
     const cookie = ctx.cookie;
-    
+
     if (session) {
       await authService.deleteSession(session.id);
     }
@@ -174,7 +173,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
   .get("/me", async (ctx: any) => {
     const user = ctx.user as User | null;
     const isAuthenticated = ctx.isAuthenticated as boolean;
-    
+
     if (!isAuthenticated || !user) {
       return { authenticated: false, user: null };
     }
@@ -186,8 +185,8 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         username: user.username,
         isAdmin: user.isAdmin,
         avatar: user.avatar,
-        createdAt: user.createdAt,
-      },
+        createdAt: user.createdAt
+      }
     };
   })
 
@@ -233,13 +232,16 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
         return { error: result.error };
       }
 
-      return { success: true, message: "Password updated. Please log in again." };
+      return {
+        success: true,
+        message: "Password updated. Please log in again."
+      };
     },
     {
       body: t.Object({
         currentPassword: t.String(),
-        newPassword: t.String(),
-      }),
+        newPassword: t.String()
+      })
     }
   )
 
@@ -252,7 +254,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     async (ctx: any) => {
       const { body, set } = ctx;
       const user = ctx.user as User | null;
-      
+
       if (!user) {
         set.status = 401;
         return { error: "Not authenticated" };
@@ -269,7 +271,7 @@ export const authRoutes = new Elysia({ prefix: "/auth" })
     },
     {
       body: t.Object({
-        avatar: t.Union([t.String(), t.Null()]),
-      }),
+        avatar: t.Union([t.String(), t.Null()])
+      })
     }
   );

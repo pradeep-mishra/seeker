@@ -1,4 +1,3 @@
-// src/server/services/mountService.ts
 import { $ } from "bun";
 import { eq } from "drizzle-orm";
 import { constants } from "fs";

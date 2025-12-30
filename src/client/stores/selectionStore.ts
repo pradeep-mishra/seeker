@@ -1,4 +1,3 @@
-// src/client/stores/selectionStore.ts
 import { create } from "zustand";
 import type { FileItem } from "../lib/api";
 
@@ -30,7 +29,11 @@ interface SelectionState {
   cutToClipboard: (sourcePath: string) => void;
   clearClipboard: () => void;
   hasClipboard: () => boolean;
-  getClipboardInfo: () => { paths: string[]; action: ClipboardAction | null; sourcePath: string | null };
+  getClipboardInfo: () => {
+    paths: string[];
+    action: ClipboardAction | null;
+    sourcePath: string | null;
+  };
 }
 
 export const useSelectionStore = create<SelectionState>((set, get) => ({
@@ -50,7 +53,7 @@ export const useSelectionStore = create<SelectionState>((set, get) => ({
     set({
       selectedPaths,
       selectedItems,
-      lastSelectedPath: item.path,
+      lastSelectedPath: item.path
     });
   },
 
@@ -71,7 +74,7 @@ export const useSelectionStore = create<SelectionState>((set, get) => ({
     set({
       selectedPaths: newSelectedPaths,
       selectedItems: newSelectedItems,
-      lastSelectedPath: item.path,
+      lastSelectedPath: item.path
     });
   },
 
@@ -109,7 +112,7 @@ export const useSelectionStore = create<SelectionState>((set, get) => ({
 
     set({
       selectedPaths: newSelectedPaths,
-      selectedItems: newSelectedItems,
+      selectedItems: newSelectedItems
       // Keep lastSelectedPath the same for range selection
     });
   },
@@ -127,7 +130,7 @@ export const useSelectionStore = create<SelectionState>((set, get) => ({
     set({
       selectedPaths,
       selectedItems,
-      lastSelectedPath: items.length > 0 ? items[items.length - 1].path : null,
+      lastSelectedPath: items.length > 0 ? items[items.length - 1].path : null
     });
   },
 
@@ -136,7 +139,7 @@ export const useSelectionStore = create<SelectionState>((set, get) => ({
     set({
       selectedPaths: new Set(),
       selectedItems: new Map(),
-      lastSelectedPath: null,
+      lastSelectedPath: null
     });
   },
 
@@ -161,7 +164,7 @@ export const useSelectionStore = create<SelectionState>((set, get) => ({
     set({
       clipboardPaths: Array.from(selectedPaths),
       clipboardAction: "copy",
-      clipboardSourcePath: sourcePath,
+      clipboardSourcePath: sourcePath
     });
   },
 
@@ -171,7 +174,7 @@ export const useSelectionStore = create<SelectionState>((set, get) => ({
     set({
       clipboardPaths: Array.from(selectedPaths),
       clipboardAction: "cut",
-      clipboardSourcePath: sourcePath,
+      clipboardSourcePath: sourcePath
     });
   },
 
@@ -180,7 +183,7 @@ export const useSelectionStore = create<SelectionState>((set, get) => ({
     set({
       clipboardPaths: [],
       clipboardAction: null,
-      clipboardSourcePath: null,
+      clipboardSourcePath: null
     });
   },
 
@@ -195,7 +198,7 @@ export const useSelectionStore = create<SelectionState>((set, get) => ({
     return {
       paths: clipboardPaths,
       action: clipboardAction,
-      sourcePath: clipboardSourcePath,
+      sourcePath: clipboardSourcePath
     };
-  },
+  }
 }));

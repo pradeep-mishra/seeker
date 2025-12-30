@@ -1,4 +1,3 @@
-// src/server/routes/files.ts
 import { Elysia, t } from "elysia";
 import { basename, join } from "path";
 import type { User } from "../db/schema";

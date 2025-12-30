@@ -1,4 +1,3 @@
-// src/client/lib/useFileUpload.ts
 import { useRef } from "react";
 import { toast } from "../components/common/Toast";
 import { useFileStore } from "../stores/fileStore";

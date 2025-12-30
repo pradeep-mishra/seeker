@@ -1,10 +1,9 @@
-// src/client/pages/RegisterPage.tsx
+import { ArrowLeft, FolderSearch, Lock, User } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuthStore } from "../stores/authStore";
 import { Button } from "../components/common/Button";
 import { Input } from "../components/common/Input";
-import { FolderSearch, User, Lock, ArrowLeft } from "lucide-react";
+import { useAuthStore } from "../stores/authStore";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -53,7 +52,9 @@ export default function RegisterPage() {
             <FolderSearch className="w-8 h-8 text-accent" />
           </div>
           <h1 className="text-2xl font-bold text-content">Seeker</h1>
-          <p className="text-content-secondary mt-1">Home Server File Browser</p>
+          <p className="text-content-secondary mt-1">
+            Home Server File Browser
+          </p>
         </div>
 
         {/* Register form */}
@@ -61,11 +62,12 @@ export default function RegisterPage() {
           <div className="flex items-center gap-2 mb-6">
             <Link
               to="/login"
-              className="p-1 rounded hover:bg-surface-hover transition-colors"
-            >
+              className="p-1 rounded hover:bg-surface-hover transition-colors">
               <ArrowLeft className="h-5 w-5 text-content-tertiary" />
             </Link>
-            <h2 className="text-lg font-semibold text-content">Create Account</h2>
+            <h2 className="text-lg font-semibold text-content">
+              Create Account
+            </h2>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -106,11 +108,7 @@ export default function RegisterPage() {
               </div>
             )}
 
-            <Button
-              type="submit"
-              className="w-full"
-              isLoading={isLoading}
-            >
+            <Button type="submit" className="w-full" isLoading={isLoading}>
               Create Account
             </Button>
           </form>

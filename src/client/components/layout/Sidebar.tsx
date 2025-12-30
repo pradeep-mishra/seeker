@@ -1,4 +1,3 @@
-// src/client/components/layout/Sidebar.tsx
 import { Clock, HardDrive, Settings, Star, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";

@@ -1,4 +1,3 @@
-// src/client/components/common/Dialog.tsx
 import { X } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";

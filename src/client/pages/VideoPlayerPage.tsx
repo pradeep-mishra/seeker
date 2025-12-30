@@ -1,4 +1,3 @@
-// src/client/pages/VideoPlayerPage.tsx
 import {
   AlertCircle,
   ArrowLeft,

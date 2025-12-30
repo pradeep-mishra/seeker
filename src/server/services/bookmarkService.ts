@@ -1,6 +1,5 @@
-// src/server/services/bookmarkService.ts
+import { and, asc, eq } from "drizzle-orm";
 import { db, schema } from "../db";
-import { eq, and, asc } from "drizzle-orm";
 import { generateId } from "../utils";
 import { fileService } from "./fileService";
 
@@ -14,7 +13,9 @@ export class BookmarkService {
   /**
    * Get all bookmarks for a user
    */
-  async getUserBookmarks(userId: string): Promise<typeof bookmarks.$inferSelect[]> {
+  async getUserBookmarks(
+    userId: string
+  ): Promise<(typeof bookmarks.$inferSelect)[]> {
     return await db
       .select()
       .from(bookmarks)
@@ -58,7 +59,11 @@ export class BookmarkService {
     userId: string,
     path: string,
     name: string
-  ): Promise<{ success: boolean; bookmark?: typeof bookmarks.$inferSelect; error?: string }> {
+  ): Promise<{
+    success: boolean;
+    bookmark?: typeof bookmarks.$inferSelect;
+    error?: string;
+  }> {
     // Validate path
     const validation = await fileService.validatePath(path);
     if (!validation.valid) {
@@ -92,7 +97,7 @@ export class BookmarkService {
         path,
         name: name.trim(),
         sortOrder: maxOrder + 1,
-        createdAt: new Date(),
+        createdAt: new Date()
       });
 
       const bookmark = await this.getBookmarkById(id, userId);
@@ -165,7 +170,9 @@ export class BookmarkService {
         await db
           .update(bookmarks)
           .set({ sortOrder: i })
-          .where(and(eq(bookmarks.id, orderedIds[i]), eq(bookmarks.userId, userId)));
+          .where(
+            and(eq(bookmarks.id, orderedIds[i]), eq(bookmarks.userId, userId))
+          );
       }
 
       return { success: true };

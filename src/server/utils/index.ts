@@ -1,4 +1,3 @@
-// src/server/utils/index.ts
 /**
  * Generate a unique ID using Web Crypto API
  * Returns a URL-safe base64 string

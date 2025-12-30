@@ -1,4 +1,3 @@
-// src/client/pages/SetupPage.tsx
 import { FolderSearch, Lock, Sparkles, User } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../components/common/Button";

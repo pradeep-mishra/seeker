@@ -1,4 +1,3 @@
-// src/client/components/dialogs/AboutDialog.tsx
 import {
   ExternalLink,
   FolderSearch,

@@ -1,4 +1,3 @@
-// src/client/stores/fileStore.ts
 import { create } from "zustand";
 import { filesApi, type FileItem, type Mount } from "../lib/api";
 

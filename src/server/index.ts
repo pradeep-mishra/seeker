@@ -1,4 +1,3 @@
-// src/server/index.ts
 import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { existsSync } from "fs";

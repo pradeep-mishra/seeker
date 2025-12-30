@@ -1,4 +1,3 @@
-// src/client/components/common/Toast.tsx
 import {
   AlertCircle,
   AlertTriangle,

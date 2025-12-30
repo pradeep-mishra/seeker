@@ -1,4 +1,3 @@
-// src/client/stores/bookmarkStore.ts
 import { create } from "zustand";
 import { bookmarksApi, type Bookmark } from "../lib/api";
 

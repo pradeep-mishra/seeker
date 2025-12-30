@@ -1,6 +1,5 @@
-// src/client/components/common/Input.tsx
-import { forwardRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { forwardRef, useState } from "react";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -11,7 +10,10 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, hint, leftIcon, rightIcon, className = "", type, ...props }, ref) => {
+  (
+    { label, error, hint, leftIcon, rightIcon, className = "", type, ...props },
+    ref
+  ) => {
     const [showPassword, setShowPassword] = useState(false);
     const isPassword = type === "password";
 
@@ -50,8 +52,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-content"
-              tabIndex={-1}
-            >
+              tabIndex={-1}>
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
               ) : (

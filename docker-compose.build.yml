@@ -1,5 +1,4 @@
-# docker-compose.build.yml
-# For developers - builds image locally from source
+# For building image locally from source
 
 services:
   seeker:

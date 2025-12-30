@@ -1,6 +1,5 @@
-// src/client/components/common/Button.tsx
-import { forwardRef } from "react";
 import { Loader2 } from "lucide-react";
+import { forwardRef } from "react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "danger";
@@ -36,13 +35,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ghost:
         "text-content hover:bg-surface-hover active:bg-surface-active focus-visible:ring-border-focus",
       danger:
-        "bg-error text-content-inverse hover:bg-red-600 active:bg-red-700 focus-visible:ring-error",
+        "bg-error text-content-inverse hover:bg-red-600 active:bg-red-700 focus-visible:ring-error"
     };
 
     const sizes = {
       sm: "h-8 px-3 text-sm gap-1.5",
       md: "h-10 px-4 text-sm gap-2",
-      lg: "h-12 px-6 text-base gap-2",
+      lg: "h-12 px-6 text-base gap-2"
     };
 
     return (
@@ -50,13 +49,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
         disabled={disabled || isLoading}
-        {...props}
-      >
-        {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          leftIcon
-        )}
+        {...props}>
+        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : leftIcon}
         {children}
         {!isLoading && rightIcon}
       </button>

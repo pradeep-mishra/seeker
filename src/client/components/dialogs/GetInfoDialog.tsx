@@ -1,4 +1,3 @@
-// src/client/components/dialogs/GetInfoDialog.tsx
 import { FileIcon, Folder } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FileItem, filesApi } from "../../lib/api";

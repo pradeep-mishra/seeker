@@ -1,4 +1,3 @@
-// src/server/services/authService.ts
 import { and, eq, gt, lt } from "drizzle-orm";
 import { db, schema } from "../db";
 import { generateId, generateSessionId, getSessionExpiry } from "../utils";

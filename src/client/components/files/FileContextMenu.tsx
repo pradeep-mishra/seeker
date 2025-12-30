@@ -1,4 +1,3 @@
-// src/client/components/files/FileContextMenu.tsx
 import {
   Clipboard,
   Copy,

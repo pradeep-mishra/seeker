@@ -1,4 +1,3 @@
-// src/client/stores/authStore.ts
 import { create } from "zustand";
 import { authApi, type User } from "../lib/api";
 

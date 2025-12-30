@@ -1,5 +1,3 @@
-// src/client/lib/utils.ts
-
 /**
  * Conditionally join class names
  */

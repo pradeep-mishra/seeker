@@ -1,6 +1,5 @@
-// src/server/services/recentService.ts
+import { and, desc, eq } from "drizzle-orm";
 import { db, schema } from "../db";
-import { eq, and, desc, lt } from "drizzle-orm";
 import { generateId } from "../utils";
 
 const { recentLocations } = schema;
@@ -21,7 +20,7 @@ export class RecentService {
   async getUserRecent(
     userId: string,
     limit: number = MAX_RECENT_LOCATIONS
-  ): Promise<typeof recentLocations.$inferSelect[]> {
+  ): Promise<(typeof recentLocations.$inferSelect)[]> {
     return await db
       .select()
       .from(recentLocations)
@@ -59,7 +58,7 @@ export class RecentService {
           id: generateId(),
           userId,
           path,
-          accessedAt: new Date(),
+          accessedAt: new Date()
         });
 
         // Clean up old entries if over limit
@@ -94,7 +93,9 @@ export class RecentService {
   /**
    * Clear all recent locations for a user
    */
-  async clearUserRecent(userId: string): Promise<{ success: boolean; error?: string }> {
+  async clearUserRecent(
+    userId: string
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       await db
         .delete(recentLocations)

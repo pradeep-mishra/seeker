@@ -1,4 +1,3 @@
-// src/client/components/dialogs/CreateFileDialog.tsx
 import { FilePlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { filesApi } from "../../lib/api";

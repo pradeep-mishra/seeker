@@ -1,4 +1,3 @@
-// src/client/pages/UserManagementPage.tsx
 import {
   ArrowLeft,
   Key,

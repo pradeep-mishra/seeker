@@ -1,4 +1,3 @@
-// src/client/components/files/FileThumbnailView.tsx
 import { File, FileText, Folder, Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";

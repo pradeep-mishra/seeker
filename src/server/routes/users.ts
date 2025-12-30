@@ -1,4 +1,3 @@
-// src/server/routes/users.ts
 import { Elysia, t } from "elysia";
 import type { User } from "../db/schema";
 import { requireAdmin } from "../middleware/auth";

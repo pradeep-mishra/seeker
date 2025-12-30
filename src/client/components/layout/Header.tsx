@@ -1,4 +1,3 @@
-// src/client/components/layout/Header.tsx
 import {
   ArrowUpDown,
   ChevronDown,

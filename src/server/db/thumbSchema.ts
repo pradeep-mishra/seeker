@@ -1,6 +1,5 @@
-// src/server/db/thumbSchema.ts
-import { sqliteTable, text, integer, blob } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
+import { blob, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 /**
  * Thumbnails table - stores generated image thumbnails
@@ -15,7 +14,7 @@ export const thumbnails = sqliteTable("thumbnails", {
   sourceModified: integer("source_modified", { mode: "timestamp" }).notNull(), // For cache invalidation
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .default(sql`(unixepoch())`)
 });
 
 export type Thumbnail = typeof thumbnails.$inferSelect;

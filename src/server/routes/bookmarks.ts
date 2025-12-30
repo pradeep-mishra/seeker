@@ -1,4 +1,3 @@
-// src/server/routes/bookmarks.ts
 import { Elysia, t } from "elysia";
 import type { User } from "../db/schema";
 import { requireAuth } from "../middleware/auth";

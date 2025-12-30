@@ -1,5 +1,3 @@
-// src/server/services/index.ts
-
 export { authService, AuthService } from "./authService";
 export { bookmarkService, BookmarkService } from "./bookmarkService";
 export { fileService, FileService } from "./fileService";

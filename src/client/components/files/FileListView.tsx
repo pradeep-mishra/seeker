@@ -1,4 +1,3 @@
-// src/client/components/files/FileListView.tsx
 import {
   File,
   FileArchive,

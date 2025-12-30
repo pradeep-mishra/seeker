@@ -1,4 +1,3 @@
-// src/client/components/browserpage/MultiSelectActionBar.tsx
 import { Copy, Download, Scissors, Trash2, X } from "lucide-react";
 import { useCallback } from "react";
 import { filesApi } from "../../lib/api";

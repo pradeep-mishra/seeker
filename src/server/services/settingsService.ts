@@ -1,4 +1,3 @@
-// src/server/services/settingsService.ts
 import { eq } from "drizzle-orm";
 import { db, schema } from "../db";
 import type { SettingsKey, SortBy, SortOrder, ViewMode } from "../db/schema";

@@ -1,4 +1,3 @@
-// src/client/components/browserpage/WarningBanner.tsx
 import { AlertCircle } from "lucide-react";
 
 interface WarningBannerProps {

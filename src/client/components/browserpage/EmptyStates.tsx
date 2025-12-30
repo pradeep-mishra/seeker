@@ -1,4 +1,3 @@
-// src/client/components/browserpage/EmptyStates.tsx
 import { AlertCircle, Folder, RefreshCw } from "lucide-react";
 import type { Mount } from "../../lib/api";
 import { useUIStore } from "../../stores/uiStore";

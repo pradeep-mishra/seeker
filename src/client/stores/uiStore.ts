@@ -1,4 +1,3 @@
-// src/client/stores/uiStore.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { settingsApi } from "../lib/api";

@@ -1,4 +1,3 @@
-// src/client/components/browserpage/SelectionBox.tsx
 interface SelectionBoxProps {
   x: number;
   y: number;

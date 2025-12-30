@@ -1,13 +1,12 @@
-// src/client/components/dialogs/CreateFolderDialog.tsx
-import { useState, useEffect } from "react";
+import { FolderPlus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { filesApi } from "../../lib/api";
+import { useFileStore } from "../../stores/fileStore";
+import { useUIStore } from "../../stores/uiStore";
+import { Button } from "../common/Button";
 import { Dialog } from "../common/Dialog";
 import { Input } from "../common/Input";
-import { Button } from "../common/Button";
-import { useUIStore } from "../../stores/uiStore";
-import { useFileStore } from "../../stores/fileStore";
-import { filesApi } from "../../lib/api";
 import { toast } from "../common/Toast";
-import { FolderPlus } from "lucide-react";
 
 export function CreateFolderDialog() {
   const { dialogs, closeCreateFolderDialog } = useUIStore();
@@ -50,7 +49,9 @@ export function CreateFolderDialog() {
         setError(result.error || "Failed to create folder");
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to create folder");
+      setError(
+        error instanceof Error ? error.message : "Failed to create folder"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -61,8 +62,7 @@ export function CreateFolderDialog() {
       isOpen={dialogs.createFolder}
       onClose={closeCreateFolderDialog}
       title="New Folder"
-      size="sm"
-    >
+      size="sm">
       <form onSubmit={handleSubmit}>
         <Input
           label="Folder name"
@@ -79,8 +79,7 @@ export function CreateFolderDialog() {
             type="button"
             variant="secondary"
             onClick={closeCreateFolderDialog}
-            disabled={isLoading}
-          >
+            disabled={isLoading}>
             Cancel
           </Button>
           <Button type="submit" isLoading={isLoading}>

@@ -1,4 +1,3 @@
-// src/client/components/dialogs/DeleteDialog.tsx
 import { useState } from "react";
 import { filesApi } from "../../lib/api";
 import { getFileName } from "../../lib/utils";

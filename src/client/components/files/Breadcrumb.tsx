@@ -1,4 +1,3 @@
-// src/client/components/files/Breadcrumb.tsx
 import { ChevronRight, Home } from "lucide-react";
 import { getMountRelativePath, parsePath } from "../../lib/utils";
 import { useFileStore } from "../../stores/fileStore";

@@ -1,4 +1,3 @@
-// src/client/components/browserpage/Toolbar.tsx
 import { FilePlus, FolderPlus, Plus, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFileStore } from "../../stores/fileStore";

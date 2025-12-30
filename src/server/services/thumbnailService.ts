@@ -1,4 +1,3 @@
-// src/server/services/thumbnailService.ts
 import { eq } from "drizzle-orm";
 import sharp from "sharp";
 import { thumbDb, thumbSchema } from "../db";

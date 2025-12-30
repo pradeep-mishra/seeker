@@ -1,4 +1,3 @@
-// src/client/components/layout/AppLayout.tsx
 import { Outlet } from "react-router-dom";
 import { useUIStore } from "../../stores/uiStore";
 import { AboutDialog } from "../dialogs/AboutDialog";

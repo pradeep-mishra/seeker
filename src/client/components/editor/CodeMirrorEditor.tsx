@@ -9,6 +9,7 @@ import { EditorView } from "@codemirror/view";
 import CodeMirror from "@uiw/react-codemirror";
 import { useMemo } from "react";
 import { cn } from "../../lib/utils";
+import { useUIStore } from "../../stores/uiStore";
 
 interface CodeMirrorEditorProps {
   content: string;
@@ -23,7 +24,10 @@ export default function CodeMirrorEditor({
   onChange,
   className
 }: CodeMirrorEditorProps) {
-  const extensions = useMemo(() => {
+  const theme = useUIStore((state) => state.theme);
+  const isDark = theme === "dark";
+
+  const languageExtensions = useMemo(() => {
     const exts: Extension[] = [];
 
     // Add language support based on the language prop
@@ -47,11 +51,53 @@ export default function CodeMirrorEditor({
         break;
     }
 
-    // Add line wrapping
-    exts.push(EditorView.lineWrapping);
-
     return exts;
   }, [language]);
+
+  const editorTheme = useMemo(() => {
+    const selectionBackground = isDark
+      ? "rgba(96, 165, 250, 0.25)"
+      : "rgba(59, 130, 246, 0.25)";
+    const selectionText = isDark ? "var(--color-warning)" : "#0f172a";
+
+    return EditorView.theme(
+      {
+        "&": {
+          color: isDark ? "var(--color-content)" : "#111827",
+          backgroundColor: isDark ? "var(--color-surface)" : "#ffffff"
+        },
+        ".cm-content": {
+          caretColor: isDark ? "var(--color-content)" : "#111827"
+        },
+        ".cm-content ::selection": {
+          backgroundColor: selectionBackground,
+          color: selectionText
+        },
+        ".cm-selectionBackground, .cm-selectionLayer .selection": {
+          backgroundColor: selectionBackground
+        },
+        "&.cm-focused .cm-cursor": {
+          borderLeftColor: isDark ? "var(--color-content)" : "#111827"
+        },
+        ".cm-selectionMatch": {
+          backgroundColor: isDark
+            ? "rgba(96, 165, 250, 0.15)"
+            : "rgba(59, 130, 246, 0.15)"
+        },
+        ".cm-gutters": {
+          backgroundColor: "transparent",
+          color: isDark ? "var(--color-content-tertiary)" : "#9ca3af",
+          border: "none"
+        }
+      },
+      { dark: isDark }
+    );
+  }, [isDark]);
+
+  const extensions = useMemo(
+    () => [...languageExtensions, EditorView.lineWrapping, editorTheme],
+    [languageExtensions, editorTheme]
+  );
 
   return (
     <div className={cn("relative w-full h-full flex flex-col", className)}>
@@ -61,7 +107,7 @@ export default function CodeMirrorEditor({
           height="100%"
           extensions={extensions}
           onChange={onChange}
-          theme="light"
+          theme={isDark ? "dark" : "light"}
           basicSetup={{
             lineNumbers: true,
             highlightActiveLineGutter: true,

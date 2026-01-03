@@ -14,6 +14,7 @@ import { useFileStore } from "../../stores/fileStore";
 import { useSelectionStore } from "../../stores/selectionStore";
 import { useUIStore } from "../../stores/uiStore";
 
+import { cn } from "../../lib/utils";
 interface FileThumbnailViewProps {
   files: FileItem[];
 }
@@ -192,8 +193,10 @@ export function FileThumbnailView({ files }: FileThumbnailViewProps) {
 
             {/* Name */}
             <p
-              className="w-full text-sm text-center text-content truncate"
-              title={item.name}>
+              className={cn(
+                "w-full text-sm text-center text-content truncate",
+                selected && "dark:text-content-inverse"
+              )}>
               {item.name}
             </p>
           </div>

@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import type { FileItem } from "../../lib/api";
 import { filesApi } from "../../lib/api";
 import {
+  cn,
   formatDate,
   formatFileSize,
   getFileIconType,
@@ -232,18 +233,30 @@ export function FileListView({ files }: FileListViewProps) {
               {/* Icon and name */}
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 {getIcon(item)}
-                <span className="truncate text-sm text-content">
+                <span
+                  className={cn(
+                    "truncate text-sm text-content",
+                    selected && "dark:text-content-inverse"
+                  )}>
                   {item.name}
                 </span>
               </div>
 
               {/* Size */}
-              <div className="w-24 text-right text-sm text-content-secondary hidden sm:block">
+              <div
+                className={cn(
+                  "w-24 text-right text-sm text-content-secondary hidden sm:block",
+                  selected && "dark:text-content-inverse"
+                )}>
                 {item.isDirectory ? "—" : formatFileSize(item.size)}
               </div>
 
               {/* Modified date */}
-              <div className="w-40 text-right text-sm text-content-secondary hidden md:block">
+              <div
+                className={cn(
+                  "w-40 text-right text-sm text-content-secondary hidden md:block",
+                  selected && "dark:text-content-inverse"
+                )}>
                 {formatDate(item.modifiedAt)}
               </div>
             </div>

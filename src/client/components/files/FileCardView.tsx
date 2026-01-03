@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import type { FileItem } from "../../lib/api";
 import { filesApi } from "../../lib/api";
 import {
+  cn,
   formatFileSize,
   formatRelativeTime,
   isImage,
@@ -195,11 +196,17 @@ export function FileCardView({ files }: FileCardViewProps) {
             {/* Info */}
             <div className="p-3">
               <p
-                className="font-medium text-content truncate"
-                title={item.name}>
+                className={cn(
+                  "font-medium text-content truncate",
+                  selected && "dark:text-content-inverse"
+                )}>
                 {item.name}
               </p>
-              <div className="flex items-center justify-between mt-1 text-xs text-content-tertiary">
+              <div
+                className={cn(
+                  "flex items-center justify-between mt-1 text-xs text-content-tertiary",
+                  selected && "dark:text-content-inverse"
+                )}>
                 <span>
                   {item.isDirectory ? "Folder" : formatFileSize(item.size)}
                 </span>

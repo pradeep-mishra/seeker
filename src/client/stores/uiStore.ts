@@ -391,7 +391,16 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: "seeker-ui-storage",
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        if (state.theme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      },
       partialize: (state) => ({
+        theme: state.theme,
         isSidebarCollapsed: state.isSidebarCollapsed,
         videoVolume: state.videoVolume
       })

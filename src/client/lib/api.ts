@@ -176,6 +176,21 @@ export interface SearchFilesParams {
   limit?: number;
 }
 
+export interface FileNeighborsParams {
+  path: string;
+  before?: number;
+  after?: number;
+  mediaType?: "image" | "video";
+}
+
+export interface FileNeighborsResponse {
+  items: FileItem[];
+  hasPrevious: boolean;
+  hasNext: boolean;
+  previousPath?: string;
+  nextPath?: string;
+}
+
 export interface FileOperationResult {
   success: boolean;
   path?: string;
@@ -221,6 +236,24 @@ export const filesApi = {
     return api
       .get(`files/search?${searchParams}`)
       .json<{ items: FileItem[]; total: number }>();
+  },
+
+  neighbors: (params: FileNeighborsParams) => {
+    const searchParams = new URLSearchParams();
+    searchParams.set("path", params.path);
+    if (params.before !== undefined) {
+      searchParams.set("before", String(params.before));
+    }
+    if (params.after !== undefined) {
+      searchParams.set("after", String(params.after));
+    }
+    if (params.mediaType) {
+      searchParams.set("mediaType", params.mediaType);
+    }
+
+    return api
+      .get(`files/neighbors?${searchParams}`)
+      .json<FileNeighborsResponse>();
   },
 
   stats: (path: string, options?: { calculateSize?: boolean }) =>

@@ -44,6 +44,14 @@ export interface FileOperationResult {
   path?: string;
 }
 
+export interface FileNeighborsResult {
+  items: FileItem[];
+  hasPrevious: boolean;
+  hasNext: boolean;
+  previousPath?: string;
+  nextPath?: string;
+}
+
 /**
  * Conflict action for copy/move operations
  */
@@ -57,7 +65,11 @@ export class FileService {
   // Directory cache to improve pagination performance
   private directoryCache = new Map<
     string,
-    { timestamp: number; entries: import("fs").Dirent[] }
+    {
+      timestamp: number;
+      entries: import("fs").Dirent[];
+      sortedEntries?: import("fs").Dirent[];
+    }
   >();
   private readonly CACHE_TTL = 45 * 1000; // 45 seconds
   private readonly CACHE_MAX_SIZE = 20;
@@ -415,6 +427,247 @@ export class FileService {
 
     await search(basePath);
     return results;
+  }
+
+  /**
+   * Get neighboring files around a specific file path for media navigation
+   */
+  async getNeighbors(
+    targetPath: string,
+    options: {
+      before?: number;
+      after?: number;
+      mediaType?: "image" | "video";
+    } = {}
+  ): Promise<FileNeighborsResult> {
+    const { before = 25, after = 25, mediaType } = options;
+
+    const validation = await this.validatePath(targetPath);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+
+    const targetStat = await stat(targetPath).catch(() => null);
+    if (!targetStat || targetStat.isDirectory()) {
+      throw new Error("Target file not found");
+    }
+
+    const parentDir = dirname(targetPath);
+    const parentValidation = await this.validatePath(parentDir);
+    if (!parentValidation.valid) {
+      throw new Error(parentValidation.error);
+    }
+
+    const cacheKey = parentDir;
+    const now = Date.now();
+    let cacheEntry = this.directoryCache.get(cacheKey);
+
+    if (
+      !cacheEntry ||
+      now - cacheEntry.timestamp >= this.CACHE_TTL ||
+      cacheEntry.entries.length === 0
+    ) {
+      const entries = await readdir(parentDir, { withFileTypes: true });
+
+      if (this.directoryCache.size >= this.CACHE_MAX_SIZE) {
+        const firstKey = this.directoryCache.keys().next().value;
+        if (firstKey) this.directoryCache.delete(firstKey);
+      }
+
+      this.directoryCache.set(cacheKey, {
+        timestamp: now,
+        entries,
+        sortedEntries: undefined
+      });
+      cacheEntry = this.directoryCache.get(cacheKey)!;
+    }
+
+    const sortedEntries = this.getSortedEntries(cacheEntry);
+    if (sortedEntries.length === 0) {
+      throw new Error("Directory is empty");
+    }
+
+    const targetName = basename(targetPath);
+    const approxIndex = this.binarySearchByName(sortedEntries, targetName);
+    if (approxIndex === -1) {
+      throw new Error("Target file not found in directory listing");
+    }
+
+    const actualIndex = this.findExactEntryIndex(
+      sortedEntries,
+      approxIndex,
+      targetName,
+      parentDir,
+      targetPath
+    );
+
+    if (actualIndex === -1) {
+      throw new Error("Target file not found in directory listing");
+    }
+
+    const targetEntry = sortedEntries[actualIndex];
+    if (targetEntry.isDirectory()) {
+      throw new Error("Target path is a directory");
+    }
+
+    const matchesMedia = (entry: import("fs").Dirent) =>
+      this.matchesMediaType(entry, mediaType);
+
+    const beforeEntries: import("fs").Dirent[] = [];
+    let leftIndex = actualIndex - 1;
+    while (leftIndex >= 0 && beforeEntries.length < before) {
+      const entry = sortedEntries[leftIndex];
+      if (matchesMedia(entry)) {
+        beforeEntries.push(entry);
+      }
+      leftIndex--;
+    }
+
+    let previousPath: string | undefined;
+    let hasPrevious = false;
+    let probeLeft = leftIndex;
+    while (probeLeft >= 0) {
+      const entry = sortedEntries[probeLeft];
+      if (matchesMedia(entry)) {
+        hasPrevious = true;
+        previousPath = join(parentDir, entry.name);
+        break;
+      }
+      probeLeft--;
+    }
+
+    const afterEntries: import("fs").Dirent[] = [];
+    let rightIndex = actualIndex + 1;
+    while (rightIndex < sortedEntries.length && afterEntries.length < after) {
+      const entry = sortedEntries[rightIndex];
+      if (matchesMedia(entry)) {
+        afterEntries.push(entry);
+      }
+      rightIndex++;
+    }
+
+    let nextPath: string | undefined;
+    let hasNext = false;
+    let probeRight = rightIndex;
+    while (probeRight < sortedEntries.length) {
+      const entry = sortedEntries[probeRight];
+      if (matchesMedia(entry)) {
+        hasNext = true;
+        nextPath = join(parentDir, entry.name);
+        break;
+      }
+      probeRight++;
+    }
+
+    const windowEntries: import("fs").Dirent[] = [
+      ...beforeEntries.reverse(),
+      targetEntry,
+      ...afterEntries
+    ];
+
+    const items = await this.statEntries(parentDir, windowEntries);
+
+    return {
+      items,
+      hasPrevious,
+      hasNext,
+      previousPath,
+      nextPath
+    };
+  }
+
+  private getSortedEntries(cacheEntry: {
+    entries: import("fs").Dirent[];
+    sortedEntries?: import("fs").Dirent[];
+  }): import("fs").Dirent[] {
+    if (!cacheEntry.sortedEntries) {
+      cacheEntry.sortedEntries = [...cacheEntry.entries].sort((a, b) =>
+        this.collator.compare(a.name, b.name)
+      );
+    }
+    return cacheEntry.sortedEntries;
+  }
+
+  private binarySearchByName(
+    entries: import("fs").Dirent[],
+    targetName: string
+  ): number {
+    let low = 0;
+    let high = entries.length - 1;
+
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      const compare = this.collator.compare(entries[mid].name, targetName);
+
+      if (compare === 0) {
+        return mid;
+      }
+
+      if (compare < 0) {
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+
+    return -1;
+  }
+
+  private findExactEntryIndex(
+    entries: import("fs").Dirent[],
+    startIndex: number,
+    targetName: string,
+    parentDir: string,
+    targetPath: string
+  ): number {
+    if (startIndex === -1) return -1;
+
+    const checkIndex = (index: number) =>
+      index >= 0 &&
+      index < entries.length &&
+      entries[index].name === targetName &&
+      join(parentDir, entries[index].name) === targetPath;
+
+    if (checkIndex(startIndex)) {
+      return startIndex;
+    }
+
+    let left = startIndex - 1;
+    while (left >= 0 && entries[left].name === targetName) {
+      if (checkIndex(left)) {
+        return left;
+      }
+      left--;
+    }
+
+    let right = startIndex + 1;
+    while (right < entries.length && entries[right].name === targetName) {
+      if (checkIndex(right)) {
+        return right;
+      }
+      right++;
+    }
+
+    return -1;
+  }
+
+  private matchesMediaType(
+    entry: import("fs").Dirent,
+    mediaType?: "image" | "video"
+  ): boolean {
+    if (entry.isDirectory()) return false;
+    if (!mediaType) return true;
+
+    const mimeType = getMimeType(entry.name);
+
+    if (mediaType === "image") {
+      return mimeType?.startsWith("image/") ?? false;
+    }
+    if (mediaType === "video") {
+      return mimeType?.startsWith("video/") ?? false;
+    }
+
+    return true;
   }
 
   /**

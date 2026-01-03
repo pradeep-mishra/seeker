@@ -10,19 +10,32 @@ import {
   ZoomIn,
   ZoomOut
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/common/Button";
+import type { FileItem } from "../lib/api";
 import { filesApi } from "../lib/api";
 import { formatFileSize, isImage } from "../lib/utils";
 import { useFileStore } from "../stores/fileStore";
 
 type ZoomMode = "fit" | "actual" | "custom";
 
+type NeighborState = {
+  items: FileItem[];
+  hasPrevious: boolean;
+  hasNext: boolean;
+  previousPath?: string;
+  nextPath?: string;
+};
+
+const NEIGHBOR_BEFORE = 25;
+const NEIGHBOR_AFTER = 25;
+
 export default function ImagePreviewPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const path = searchParams.get("path");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const {
     files,
@@ -41,35 +54,56 @@ export default function ImagePreviewPage() {
   const [zoomLevel, setZoomLevel] = useState(100);
   const [zoomMode, setZoomMode] = useState<ZoomMode>("fit");
   const [pendingNavigation, setPendingNavigation] = useState(false);
+  const [neighborState, setNeighborState] = useState<NeighborState>({
+    items: [],
+    hasPrevious: false,
+    hasNext: false,
+    previousPath: undefined,
+    nextPath: undefined
+  });
 
   // Get list of image files in current directory
   const imageFiles = useMemo(() => {
     return files.filter((f) => !f.isDirectory && isImage(f.mimeType));
   }, [files]);
 
+  const neighborImages = neighborState.items;
+  const activeImages = neighborImages.length > 0 ? neighborImages : imageFiles;
+
   // Find current image index
   const currentIndex = useMemo(() => {
-    return imageFiles.findIndex((f) => f.path === path);
-  }, [imageFiles, path]);
+    return activeImages.findIndex((f) => f.path === path);
+  }, [activeImages, path]);
 
-  const hasPrevious = currentIndex > 0;
-  // Check if there's a next image locally OR if there might be more on the server
-  const hasNext =
-    currentIndex < imageFiles.length - 1 ||
-    (currentIndex === imageFiles.length - 1 && hasMore);
+  const usingNeighbors = neighborImages.length > 0 && currentIndex !== -1;
+
+  const hasPrevious = usingNeighbors
+    ? currentIndex > 0 || Boolean(neighborState.previousPath)
+    : currentIndex > 0;
+
+  // Check if there's a next image available (neighbors or fallback store)
+  const hasNext = usingNeighbors
+    ? (currentIndex !== -1 && currentIndex < activeImages.length - 1) ||
+      Boolean(neighborState.nextPath)
+    : currentIndex < imageFiles.length - 1 ||
+      (currentIndex === imageFiles.length - 1 && hasMore);
 
   // Get current file info
   const currentFile = useMemo(() => {
-    return imageFiles[currentIndex];
-  }, [imageFiles, currentIndex]);
+    return activeImages[currentIndex];
+  }, [activeImages, currentIndex]);
 
   // Simple image URL - browser handles auth cookies automatically
   const imageUrl = path ? filesApi.download(path, true) : "";
 
-  // Navigate to next image after loading more files
+  // Navigate to next image after loading more files (fallback when neighbor data is unavailable)
   useEffect(() => {
-    if (pendingNavigation && !isLoadingFiles && imageFiles.length > 0) {
-      // Find the next image file after the current one
+    if (
+      neighborImages.length === 0 &&
+      pendingNavigation &&
+      !isLoadingFiles &&
+      imageFiles.length > 0
+    ) {
       const nextImageIndex = currentIndex + 1;
       if (nextImageIndex < imageFiles.length) {
         const nextFile = imageFiles[nextImageIndex];
@@ -78,12 +112,55 @@ export default function ImagePreviewPage() {
       setPendingNavigation(false);
     }
   }, [
+    neighborImages.length,
     pendingNavigation,
     isLoadingFiles,
     imageFiles,
     currentIndex,
     setSearchParams
   ]);
+
+  const loadNeighbors = useCallback(async (targetPath: string | null) => {
+    if (!targetPath) {
+      setNeighborState({
+        items: [],
+        hasPrevious: false,
+        hasNext: false,
+        previousPath: undefined,
+        nextPath: undefined
+      });
+      return;
+    }
+
+    try {
+      const response = await filesApi.neighbors({
+        path: targetPath,
+        before: NEIGHBOR_BEFORE,
+        after: NEIGHBOR_AFTER,
+        mediaType: "image"
+      });
+      setNeighborState({
+        items: response.items,
+        hasPrevious: response.hasPrevious,
+        hasNext: response.hasNext,
+        previousPath: response.previousPath,
+        nextPath: response.nextPath
+      });
+    } catch (err) {
+      console.error("Failed to load image neighbors", err);
+      setNeighborState({
+        items: [],
+        hasPrevious: false,
+        hasNext: false,
+        previousPath: undefined,
+        nextPath: undefined
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    loadNeighbors(path);
+  }, [path, loadNeighbors]);
 
   // Load image metadata
   useEffect(() => {
@@ -150,36 +227,60 @@ export default function ImagePreviewPage() {
   }, [isLoading, error, hasPrevious, hasNext]);
 
   const navigateToPrevious = useCallback(() => {
-    if (hasPrevious) {
-      const prevFile = imageFiles[currentIndex - 1];
+    if (!path) return;
+
+    if (currentIndex > 0 && activeImages[currentIndex - 1]) {
+      const prevFile = activeImages[currentIndex - 1];
       setSearchParams({ path: prevFile.path });
+      return;
     }
-  }, [hasPrevious, imageFiles, currentIndex, setSearchParams]);
+
+    if (usingNeighbors && neighborState.previousPath) {
+      setSearchParams({ path: neighborState.previousPath });
+    }
+  }, [
+    activeImages,
+    currentIndex,
+    neighborState.previousPath,
+    path,
+    setSearchParams,
+    usingNeighbors
+  ]);
 
   const navigateToNext = useCallback(async () => {
-    // If there's a next image locally loaded, navigate to it
-    if (currentIndex < imageFiles.length - 1) {
-      const nextFile = imageFiles[currentIndex + 1];
+    if (!path) return;
+
+    if (currentIndex !== -1 && currentIndex < activeImages.length - 1) {
+      const nextFile = activeImages[currentIndex + 1];
       setSearchParams({ path: nextFile.path });
+      return;
     }
-    // If we're at the last locally loaded image but there are more on server
-    else if (
+
+    if (usingNeighbors && neighborState.nextPath) {
+      setSearchParams({ path: neighborState.nextPath });
+      return;
+    }
+
+    if (
+      !usingNeighbors &&
       currentIndex === imageFiles.length - 1 &&
       hasMore &&
       !isLoadingFiles
     ) {
-      // Set flag to navigate after loading
       setPendingNavigation(true);
-      // Load more files from server
       await loadMore();
     }
   }, [
+    activeImages,
     currentIndex,
-    imageFiles,
+    neighborState.nextPath,
+    usingNeighbors,
+    path,
+    setSearchParams,
+    imageFiles.length,
     hasMore,
     isLoadingFiles,
-    loadMore,
-    setSearchParams
+    loadMore
   ]);
 
   const handleZoomIn = useCallback(() => {
@@ -198,6 +299,10 @@ export default function ImagePreviewPage() {
     });
   }, []);
 
+  const clampZoom = useCallback((value: number) => {
+    return Math.min(Math.max(value, 25), 400);
+  }, []);
+
   const handleFitToScreen = useCallback(() => {
     setZoomMode("fit");
     setZoomLevel(100);
@@ -207,6 +312,25 @@ export default function ImagePreviewPage() {
     setZoomMode("actual");
     setZoomLevel(100);
   }, []);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) {
+        return;
+      }
+
+      event.preventDefault();
+      setZoomMode("custom");
+      const delta = event.deltaY > 0 ? -15 : 15;
+      setZoomLevel((prev) => clampZoom(prev + delta));
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    return () => container.removeEventListener("wheel", handleWheel);
+  }, [clampZoom, isLoading, error, path]);
 
   const handleDownload = () => {
     if (path) {
@@ -282,7 +406,7 @@ export default function ImagePreviewPage() {
       </header>
 
       {/* Main Image Area */}
-      <div className="flex-1 relative overflow-hidden bg-surface-base">
+      <div className="flex-1 relative bg-surface-base overflow-hidden">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-accent mb-4" />
@@ -298,30 +422,34 @@ export default function ImagePreviewPage() {
         ) : (
           <>
             {/* Image Container */}
-            <div className="flex items-center justify-center h-full w-full p-4">
-              <img
-                src={imageUrl}
-                alt={path.split("/").pop()}
-                className={`transition-all duration-200 ${
-                  zoomMode === "fit"
-                    ? "max-w-full max-h-full object-contain"
-                    : zoomMode === "actual"
-                    ? "max-w-none"
-                    : "max-w-none"
-                }`}
-                style={
-                  zoomMode === "custom"
-                    ? {
-                        transform: `scale(${zoomLevel / 100})`,
-                        transformOrigin: "center"
-                      }
-                    : undefined
-                }
-              />
+            <div
+              ref={scrollContainerRef}
+              className="absolute inset-0 overflow-auto overscroll-contain">
+              <div className="flex items-center justify-center min-h-full min-w-full p-4">
+                <img
+                  src={imageUrl}
+                  alt={path.split("/").pop()}
+                  className={`transition-all duration-200 ${
+                    zoomMode === "fit"
+                      ? "max-w-full max-h-full object-contain"
+                      : zoomMode === "actual"
+                      ? "max-w-none"
+                      : "max-w-none"
+                  }`}
+                  style={
+                    zoomMode === "custom"
+                      ? {
+                          transform: `scale(${zoomLevel / 100})`,
+                          transformOrigin: "center"
+                        }
+                      : undefined
+                  }
+                />
+              </div>
             </div>
 
             {/* Navigation Arrows */}
-            {imageFiles.length > 1 && (
+            {(hasPrevious || hasNext) && (
               <>
                 {hasPrevious && (
                   <button
@@ -349,7 +477,14 @@ export default function ImagePreviewPage() {
 
             {/* Floating Zoom Controls */}
             <div className="absolute bottom-4 right-4 bg-surface-secondary/70 backdrop-blur-sm border border-border/50 rounded-lg shadow-lg">
-              <div className="flex flex-col gap-1 p-2">
+              <div className="flex flex-col gap-1 p-2 relative">
+                <div className="absolute -top-8 right-1">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide border border-border/60 text-content shadow-sm">
+                    {zoomMode === "custom"
+                      ? `${Math.round(zoomLevel)}%`
+                      : "FIT"}
+                  </span>
+                </div>
                 {/* Zoom In */}
                 <button
                   onClick={handleZoomIn}
@@ -383,13 +518,6 @@ export default function ImagePreviewPage() {
                   title="Zoom Out (-)">
                   <ZoomOut className="w-4 h-4 text-content" />
                 </button>
-
-                {/* Zoom Percentage (only show in custom mode) */}
-                {zoomMode === "custom" && (
-                  <div className="text-xs text-center text-content-muted py-1 px-2 border-t border-border/50">
-                    {zoomLevel}%
-                  </div>
-                )}
               </div>
             </div>
           </>

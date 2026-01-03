@@ -87,6 +87,57 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
   )
 
   /**
+   * GET /api/files/neighbors
+   * Get neighboring files for media navigation
+   */
+  .get(
+    "/neighbors",
+    async ({ query, set }) => {
+      const { path, before = "25", after = "25", mediaType } = query;
+
+      if (!path) {
+        set.status = 400;
+        return { error: "Path is required" };
+      }
+
+      if (mediaType && !["image", "video"].includes(mediaType)) {
+        set.status = 400;
+        return { error: "Invalid mediaType. Expected 'image' or 'video'." };
+      }
+
+      try {
+        const result = await fileService.getNeighbors(path, {
+          before: Math.max(0, parseInt(before, 10)),
+          after: Math.max(0, parseInt(after, 10)),
+          mediaType: mediaType as "image" | "video" | undefined
+        });
+
+        return result;
+      } catch (error) {
+        const message = (error as Error).message;
+
+        if (message === "Target file not found") {
+          set.status = 404;
+        } else if (message === "Access denied" || message === "Invalid path") {
+          set.status = 403;
+        } else {
+          set.status = 400;
+        }
+
+        return { error: message };
+      }
+    },
+    {
+      query: t.Object({
+        path: t.String(),
+        before: t.Optional(t.String()),
+        after: t.Optional(t.String()),
+        mediaType: t.Optional(t.String())
+      })
+    }
+  )
+
+  /**
    * GET /api/files/search
    * Search for files
    */

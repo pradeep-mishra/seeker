@@ -122,7 +122,7 @@ export class ThumbnailService {
         return thumbnail;
       }
     } catch (error) {
-      console.error(`Error generating thumbnail for ${filePath}:`, error);
+      console.log(`Error generating thumbnail for ${filePath}:`, error);
     }
 
     return null;

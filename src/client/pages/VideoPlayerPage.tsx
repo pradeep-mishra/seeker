@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/common/Button";
 import { VideoPlayer } from "../components/video/VideoPlayer";
+import type { FileItem } from "../lib/api";
 import { filesApi } from "../lib/api";
 import { formatFileSize, getVideoSupportTier, isVideo } from "../lib/utils";
 import { useFileStore } from "../stores/fileStore";
@@ -59,26 +60,50 @@ export default function VideoPlayerPage() {
   const [error, setError] = useState<string | null>(null);
   const [pendingNavigation, setPendingNavigation] = useState(false);
   const [isWarningDismissed, setIsWarningDismissed] = useState(false);
+  const [neighborState, setNeighborState] = useState<{
+    items: FileItem[];
+    hasPrevious: boolean;
+    hasNext: boolean;
+    previousPath?: string;
+    nextPath?: string;
+  }>({
+    items: [],
+    hasPrevious: false,
+    hasNext: false,
+    previousPath: undefined,
+    nextPath: undefined
+  });
+  const [isNeighborSupported, setIsNeighborSupported] = useState(true);
 
   // Get list of video files in current directory
-  const videoFiles = useMemo(() => {
+  const fallbackVideoFiles = useMemo(() => {
     return files.filter((f) => !f.isDirectory && isVideo(f.mimeType));
   }, [files]);
 
+  const activeVideoFiles =
+    neighborState.items.length > 0 ? neighborState.items : fallbackVideoFiles;
+
   // Find current video index
   const currentIndex = useMemo(() => {
-    return videoFiles.findIndex((f) => f.path === path);
-  }, [videoFiles, path]);
+    return activeVideoFiles.findIndex((f) => f.path === path);
+  }, [activeVideoFiles, path]);
 
-  const hasPrevious = currentIndex > 0;
-  const hasNext =
-    currentIndex < videoFiles.length - 1 ||
-    (currentIndex === videoFiles.length - 1 && hasMore);
+  const usingNeighbors = neighborState.items.length > 0 && currentIndex !== -1;
+
+  const hasPrevious = usingNeighbors
+    ? currentIndex > 0 || Boolean(neighborState.previousPath)
+    : currentIndex > 0;
+
+  const hasNext = usingNeighbors
+    ? (currentIndex !== -1 && currentIndex < activeVideoFiles.length - 1) ||
+      Boolean(neighborState.nextPath)
+    : currentIndex < fallbackVideoFiles.length - 1 ||
+      (currentIndex === fallbackVideoFiles.length - 1 && hasMore);
 
   // Get current file info
   const currentFile = useMemo(() => {
-    return videoFiles[currentIndex];
-  }, [videoFiles, currentIndex]);
+    return activeVideoFiles[currentIndex];
+  }, [activeVideoFiles, currentIndex]);
 
   // Video stream URL - memoized to prevent recreation
   const videoUrl = useMemo(() => {
@@ -96,23 +121,85 @@ export default function VideoPlayerPage() {
     return getVideoSupportTier(currentFile.mimeType);
   }, [currentFile]);
 
-  // Navigate to next video after loading more files
+  // Navigate to next video after loading more files (fallback when neighbors aren't available)
   useEffect(() => {
-    if (pendingNavigation && !isLoadingFiles && videoFiles.length > 0) {
+    if (
+      neighborState.items.length === 0 &&
+      pendingNavigation &&
+      !isLoadingFiles &&
+      fallbackVideoFiles.length > 0
+    ) {
       const nextVideoIndex = currentIndex + 1;
-      if (nextVideoIndex < videoFiles.length) {
-        const nextFile = videoFiles[nextVideoIndex];
+      if (nextVideoIndex < fallbackVideoFiles.length) {
+        const nextFile = fallbackVideoFiles[nextVideoIndex];
         setSearchParams({ path: nextFile.path });
       }
       setPendingNavigation(false);
     }
   }, [
+    neighborState.items.length,
     pendingNavigation,
     isLoadingFiles,
-    videoFiles,
+    fallbackVideoFiles,
     currentIndex,
     setSearchParams
   ]);
+
+  const loadNeighbors = useCallback(
+    async (targetPath: string | null) => {
+      if (!targetPath || !isNeighborSupported) {
+        setNeighborState({
+          items: [],
+          hasPrevious: false,
+          hasNext: false,
+          previousPath: undefined,
+          nextPath: undefined
+        });
+        return;
+      }
+
+      try {
+        const response = await filesApi.neighbors({
+          path: targetPath,
+          before: 25,
+          after: 25,
+          mediaType: "video"
+        });
+        setNeighborState({
+          items: response.items,
+          hasPrevious: response.hasPrevious,
+          hasNext: response.hasNext,
+          previousPath: response.previousPath,
+          nextPath: response.nextPath
+        });
+      } catch (err) {
+        const status =
+          typeof err === "object" &&
+          err !== null &&
+          "response" in err &&
+          (err as { response?: Response }).response?.status;
+
+        if (status === 404) {
+          setIsNeighborSupported(false);
+        } else {
+          console.error("Failed to load video neighbors", err);
+        }
+
+        setNeighborState({
+          items: [],
+          hasPrevious: false,
+          hasNext: false,
+          previousPath: undefined,
+          nextPath: undefined
+        });
+      }
+    },
+    [isNeighborSupported]
+  );
+
+  useEffect(() => {
+    loadNeighbors(path);
+  }, [path, loadNeighbors]);
 
   // Handle video metadata load
   const handleLoadedMetadata = useCallback(
@@ -141,18 +228,43 @@ export default function VideoPlayerPage() {
 
   // Navigation handlers - defined before keyboard handler
   const navigateToPrevious = useCallback(() => {
-    if (hasPrevious) {
-      const prevFile = videoFiles[currentIndex - 1];
+    if (!path) return;
+
+    if (currentIndex > 0 && activeVideoFiles[currentIndex - 1]) {
+      const prevFile = activeVideoFiles[currentIndex - 1];
       setSearchParams({ path: prevFile.path });
+      return;
     }
-  }, [hasPrevious, videoFiles, currentIndex, setSearchParams]);
+
+    if (usingNeighbors && neighborState.previousPath) {
+      setSearchParams({ path: neighborState.previousPath });
+    }
+  }, [
+    activeVideoFiles,
+    currentIndex,
+    neighborState.previousPath,
+    path,
+    setSearchParams,
+    usingNeighbors
+  ]);
 
   const navigateToNext = useCallback(async () => {
-    if (currentIndex < videoFiles.length - 1) {
-      const nextFile = videoFiles[currentIndex + 1];
+    if (!path) return;
+
+    if (currentIndex !== -1 && currentIndex < activeVideoFiles.length - 1) {
+      const nextFile = activeVideoFiles[currentIndex + 1];
       setSearchParams({ path: nextFile.path });
-    } else if (
-      currentIndex === videoFiles.length - 1 &&
+      return;
+    }
+
+    if (usingNeighbors && neighborState.nextPath) {
+      setSearchParams({ path: neighborState.nextPath });
+      return;
+    }
+
+    if (
+      !usingNeighbors &&
+      currentIndex === fallbackVideoFiles.length - 1 &&
       hasMore &&
       !isLoadingFiles
     ) {
@@ -160,12 +272,16 @@ export default function VideoPlayerPage() {
       await loadMore();
     }
   }, [
+    activeVideoFiles,
     currentIndex,
-    videoFiles,
+    neighborState.nextPath,
+    usingNeighbors,
+    path,
+    setSearchParams,
+    fallbackVideoFiles.length,
     hasMore,
     isLoadingFiles,
-    loadMore,
-    setSearchParams
+    loadMore
   ]);
 
   // Memoized handlers
@@ -240,11 +356,11 @@ export default function VideoPlayerPage() {
               <span className="text-xs text-content-muted whitespace-nowrap hidden lg:inline">
                 {formatFileSize(videoInfo.size)}
               </span>
-              {videoFiles.length > 1 && (
+              {activeVideoFiles.length > 1 && (
                 <>
                   <span className="text-content-muted hidden xl:inline">•</span>
                   <span className="text-xs text-content-muted whitespace-nowrap hidden xl:inline">
-                    {currentIndex + 1} / {videoFiles.length} locally loaded
+                    {currentIndex + 1} / {activeVideoFiles.length} loaded
                   </span>
                 </>
               )}
@@ -351,7 +467,7 @@ export default function VideoPlayerPage() {
             )}
 
             {/* Navigation Arrows */}
-            {videoFiles.length > 1 && (
+            {(hasPrevious || hasNext) && (
               <>
                 {hasPrevious && (
                   <button

@@ -9,7 +9,7 @@ services:
       - "7335:3000"
     volumes:
       # Configuration directory (required) - stores databases
-      - ./config-test:/config
+      - ./config:/config
       # Change this to your actual data directory
       - /data:/data
       # Add more mounts as needed and mount them in settings page

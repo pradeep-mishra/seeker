@@ -146,7 +146,7 @@ Handle PDF documents with ease:
 ```yaml
 services:
   seeker:
-    image: seeker:latest
+    image: ipradeepmishra/seeker:latest
     container_name: seeker
     restart: unless-stopped
     ports:

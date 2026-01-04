@@ -657,7 +657,7 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
   .post(
     "/upload/init",
     async ({ body, set }) => {
-      const { path, filename, totalChunks } = body;
+      const { path, filename, totalChunks, relativePath } = body;
 
       if (!path || !filename || totalChunks === undefined) {
         set.status = 400;
@@ -675,7 +675,8 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
         const result = await uploadService.initUpload(
           path,
           filename,
-          totalChunks
+          totalChunks,
+          relativePath
         );
         return { success: true, uploadId: result.uploadId };
       } catch (error) {
@@ -687,7 +688,8 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
       body: t.Object({
         path: t.String(),
         filename: t.String(),
-        totalChunks: t.Number()
+        totalChunks: t.Number(),
+        relativePath: t.Optional(t.String())
       })
     }
   )

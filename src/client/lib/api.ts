@@ -208,6 +208,11 @@ export interface BatchOperationResult {
   }[];
 }
 
+export interface UploadItem {
+  file: File;
+  relativePath?: string;
+}
+
 export const filesApi = {
   list: (params: ListFilesParams) => {
     const searchParams = new URLSearchParams();
@@ -329,7 +334,7 @@ export const filesApi = {
 
   upload: async (
     path: string,
-    files: File[],
+    items: UploadItem[],
     onProgress?: (progress: number) => void,
     signal?: AbortSignal
   ): Promise<{
@@ -341,7 +346,7 @@ export const filesApi = {
     const CONCURRENCY = 4; // 4 concurrent requests
 
     // Calculate total size for global progress
-    const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+    const totalSize = items.reduce((acc, item) => acc + item.file.size, 0);
     let uploadedBytes = 0;
 
     // Track active uploads for cancellation
@@ -357,7 +362,7 @@ export const filesApi = {
       });
     }
 
-    for (const file of files) {
+    for (const { file, relativePath } of items) {
       // Check for abort before starting new file
       if (signal?.aborted) {
         throw new Error("Upload cancelled");
@@ -365,6 +370,7 @@ export const filesApi = {
 
       try {
         const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+        const displayName = relativePath || file.name;
 
         // 1. Initialize upload
         const initResponse = await api
@@ -372,7 +378,8 @@ export const filesApi = {
             json: {
               path,
               filename: file.name,
-              totalChunks
+              totalChunks,
+              relativePath
             },
             signal // Pass signal to init request
           })
@@ -510,7 +517,7 @@ export const filesApi = {
         const index = activeUploadIds.indexOf(uploadId);
         if (index > -1) activeUploadIds.splice(index, 1);
 
-        results.push({ name: file.name, success: true });
+        results.push({ name: displayName, success: true });
       } catch (error) {
         if (
           signal?.aborted ||
@@ -520,9 +527,10 @@ export const filesApi = {
           throw new Error("Upload cancelled");
         }
 
-        console.error(`Failed to upload ${file.name}:`, error);
+        const displayName = relativePath || file.name;
+        console.error(`Failed to upload ${displayName}:`, error);
         results.push({
-          name: file.name,
+          name: displayName,
           success: false,
           error: (error as Error).message
         });

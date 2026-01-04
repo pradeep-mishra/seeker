@@ -3,6 +3,7 @@ import {
   ChevronDown,
   CircleUserRound,
   FolderSearch,
+  FolderUp,
   Grid,
   Info,
   LayoutGrid,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { buildUploadItemsFromFileList } from "../../lib/uploadUtils";
 import { useFileUpload } from "../../lib/useFileUpload";
 import { useAuthStore } from "../../stores/authStore";
 import { useFileStore } from "../../stores/fileStore";
@@ -50,9 +52,12 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [showUploadMenu, setShowUploadMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const uploadMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
   const { uploadFiles } = useFileUpload();
 
   // Close menus when clicking outside
@@ -69,6 +74,12 @@ export function Header() {
         !sortMenuRef.current.contains(e.target as Node)
       ) {
         setShowSortMenu(false);
+      }
+      if (
+        uploadMenuRef.current &&
+        !uploadMenuRef.current.contains(e.target as Node)
+      ) {
+        setShowUploadMenu(false);
       }
     };
 
@@ -118,6 +129,24 @@ export function Header() {
   const handleLogout = async () => {
     await logout();
     navigate("/login");
+  };
+
+  const handleSelection = (input: HTMLInputElement | null) => {
+    const files = Array.from(input?.files || []);
+    if (!files.length) return;
+
+    uploadFiles(buildUploadItemsFromFileList(files));
+    if (input) {
+      input.value = "";
+    }
+  };
+
+  const handleFolderInputRef = (node: HTMLInputElement | null) => {
+    folderInputRef.current = node;
+    if (node) {
+      node.setAttribute("webkitdirectory", "true");
+      node.setAttribute("directory", "true");
+    }
   };
 
   const viewModeIcons = {
@@ -248,30 +277,51 @@ export function Header() {
 
       {/* Upload button - only on browse page */}
       {isBrowsePage && (
-        <>
+        <div className="relative" ref={uploadMenuRef}>
           <input
             ref={fileInputRef}
             type="file"
             multiple
             className="hidden"
-            onChange={(e) => {
-              const files = Array.from(e.target.files || []);
-              if (files.length > 0) {
-                uploadFiles(files);
-              }
-              // Reset input so same file can be selected again
-              e.target.value = "";
-            }}
+            onChange={(e) => handleSelection(e.currentTarget)}
+          />
+          <input
+            ref={handleFolderInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => handleSelection(e.currentTarget)}
           />
           <button
             className="flex items-center gap-2 px-4 py-2 bg-accent text-content-inverse rounded-md hover:bg-accent-hover transition-colors text-sm font-medium"
-            onClick={() => {
-              fileInputRef.current?.click();
-            }}>
+            onClick={() => setShowUploadMenu((prev) => !prev)}>
             <Upload className="h-4 w-4" />
             <span className="hidden sm:inline">Upload</span>
+            <ChevronDown className="h-4 w-4" />
           </button>
-        </>
+          {showUploadMenu && (
+            <div className="absolute right-0 mt-2 w-44 bg-surface border border-border rounded-lg shadow-elevated z-50">
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-surface-hover transition-colors"
+                onClick={() => {
+                  setShowUploadMenu(false);
+                  fileInputRef.current?.click();
+                }}>
+                <Upload className="h-4 w-4" />
+                Upload Files
+              </button>
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-surface-hover transition-colors"
+                onClick={() => {
+                  setShowUploadMenu(false);
+                  folderInputRef.current?.click();
+                }}>
+                <FolderUp className="h-4 w-4" />
+                Upload Folder
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       {/* User menu */}

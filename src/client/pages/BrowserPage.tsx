@@ -9,6 +9,7 @@ import {
   Toolbar,
   WarningBanner
 } from "../components/browserpage";
+import { toast } from "../components/common/Toast";
 import { CreateFileDialog } from "../components/dialogs/CreateFileDialog";
 import { CreateFolderDialog } from "../components/dialogs/CreateFolderDialog";
 import { DeleteDialog } from "../components/dialogs/DeleteDialog";
@@ -16,6 +17,7 @@ import { GetInfoDialog } from "../components/dialogs/GetInfoDialog";
 import { RenameDialog } from "../components/dialogs/RenameDialog";
 import { FileContextMenu } from "../components/files/FileContextMenu";
 import { mountsApi, type Mount } from "../lib/api";
+import { collectUploadItemsFromDataTransfer } from "../lib/uploadUtils";
 import { useFileUpload } from "../lib/useFileUpload";
 import { useLassoSelection } from "../lib/useLassoSelection";
 import { useAuthStore } from "../stores/authStore";
@@ -294,10 +296,19 @@ export default function BrowserPage() {
     dragDepthRef.current = 0;
     setIsDraggingOver(false);
 
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length === 0) return;
+    const { items: uploadItems, isUnsupportedDirectory } =
+      await collectUploadItemsFromDataTransfer(e.dataTransfer);
 
-    await uploadFiles(files);
+    if (isUnsupportedDirectory) {
+      toast.info(
+        "Folder drag & drop is not supported in this browser. Use the folder picker or switch to Chrome/Edge."
+      );
+      return;
+    }
+
+    if (uploadItems.length === 0) return;
+
+    await uploadFiles(uploadItems);
   };
 
   // Render loading state
@@ -362,10 +373,10 @@ export default function BrowserPage() {
               <FolderUp className="h-10 w-10 text-accent" />
             </div>
             <div className="text-lg font-semibold text-content mb-2">
-              Drop files to upload
+              Drop files or folders to upload
             </div>
             <div className="text-sm text-content-secondary">
-              Files will be uploaded to {currentPath}
+              Items will be uploaded to {currentPath}
             </div>
           </div>
         </div>

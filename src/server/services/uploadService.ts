@@ -1,5 +1,5 @@
 import { eq, lt } from "drizzle-orm";
-import { open, rename, unlink } from "fs/promises";
+import { mkdir, open, rename, unlink } from "fs/promises";
 import { basename, dirname, extname, join } from "path";
 import { db, schema } from "../db";
 import { generateId } from "../utils";
@@ -17,6 +17,26 @@ export class UploadService {
   constructor() {
     // Run cleanup on startup
     this.cleanupStaleUploads().catch(console.error);
+  }
+
+  private normalizeRelativePath(relativePath?: string): string | null {
+    if (!relativePath) return null;
+
+    const normalized = relativePath
+      .replace(/\\/g, "/")
+      .replace(/^\/+/, "")
+      .replace(/\/+$/, "");
+
+    if (!normalized) {
+      return null;
+    }
+
+    const segments = normalized.split("/");
+    if (segments.some((segment) => segment === "." || segment === "..")) {
+      throw new Error("Invalid relative path");
+    }
+
+    return normalized;
   }
 
   /**
@@ -107,7 +127,8 @@ export class UploadService {
   async initUpload(
     path: string,
     filename: string,
-    totalChunks: number
+    totalChunks: number,
+    relativePath?: string
   ): Promise<{ uploadId: string }> {
     // Lazy cleanup
     if (Date.now() - this.lastCleanup > this.CLEANUP_INTERVAL) {
@@ -120,33 +141,70 @@ export class UploadService {
       throw new Error(validation.error);
     }
 
+    const safeRelativePath = this.normalizeRelativePath(relativePath);
+    const absoluteRelativePath = safeRelativePath
+      ? join(path, safeRelativePath)
+      : null;
+    const targetDir = absoluteRelativePath
+      ? dirname(absoluteRelativePath)
+      : path;
+    const initialFileName = absoluteRelativePath
+      ? basename(absoluteRelativePath)
+      : filename;
+
+    const relativeDirPrefix =
+      safeRelativePath && safeRelativePath.includes("/")
+        ? safeRelativePath.slice(0, safeRelativePath.lastIndexOf("/") + 1)
+        : "";
+
+    let resolvedRelativePath = safeRelativePath ?? filename;
+    const updateResolvedRelativePath = (fileName: string) => {
+      resolvedRelativePath = relativeDirPrefix
+        ? `${relativeDirPrefix}${fileName}`
+        : fileName;
+    };
+
+    let currentFileName = initialFileName;
+    updateResolvedRelativePath(currentFileName);
+
     // Determine final path and handle conflicts
-    let targetPath = join(path, filename);
+    let targetPath = join(targetDir, currentFileName);
     const exists = await fileService.exists(targetPath);
 
     if (exists) {
       // Generate unique name
-      const ext = extname(filename);
-      const nameWithoutExt = basename(filename, ext);
+      const ext = extname(currentFileName);
+      const nameWithoutExt = basename(currentFileName, ext);
       const uniqueName = `${nameWithoutExt}_${generateId(6)}${ext}`;
-      targetPath = join(path, uniqueName);
+      currentFileName = uniqueName;
+      targetPath = join(targetDir, uniqueName);
+      updateResolvedRelativePath(uniqueName);
     }
 
+    const targetValidation = await fileService.validatePath(targetPath);
+    if (!targetValidation.valid) {
+      throw new Error(targetValidation.error);
+    }
+
+    await mkdir(targetDir, { recursive: true });
+
     // Append .partial for the temporary file
-    const partialPath = `${targetPath}.partial`;
+    let partialPath = `${targetPath}.partial`;
 
     // Ensure the partial file doesn't already exist (highly unlikely with unique ID, but possible)
     if (await fileService.exists(partialPath)) {
       // If it exists, it might be a stale upload or collision.
       // We'll generate a new unique name to be safe.
-      const ext = extname(filename);
-      const nameWithoutExt = basename(filename, ext);
+      const ext = extname(currentFileName);
+      const nameWithoutExt = basename(currentFileName, ext);
       const uniqueName = `${nameWithoutExt}_${generateId(8)}${ext}`;
-      targetPath = join(path, uniqueName);
-      // partialPath will be updated
+      currentFileName = uniqueName;
+      targetPath = join(targetDir, uniqueName);
+      partialPath = `${targetPath}.partial`;
+      updateResolvedRelativePath(uniqueName);
     }
 
-    const finalPartialPath = `${targetPath}.partial`;
+    const finalPartialPath = partialPath;
 
     // Create the empty file
     // Using 'w' flag ensures we create/truncate
@@ -159,7 +217,7 @@ export class UploadService {
     await db.insert(schema.uploads).values({
       id: uploadId,
       filePath: finalPartialPath,
-      originalName: filename,
+      originalName: resolvedRelativePath,
       totalChunks: totalChunks,
       uploadedChunks: "[]",
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours

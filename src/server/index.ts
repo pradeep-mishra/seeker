@@ -11,7 +11,8 @@ import {
   mountRoutes,
   recentRoutes,
   settingsRoutes,
-  userRoutes
+  userRoutes,
+  virtualFolderRoutes
 } from "./routes";
 import { mountService } from "./services";
 
@@ -68,6 +69,7 @@ function createApp(): Elysia {
       .use(recentRoutes)
       .use(settingsRoutes)
       .use(userRoutes)
+      .use(virtualFolderRoutes)
   );
 
   // Serve static files in production

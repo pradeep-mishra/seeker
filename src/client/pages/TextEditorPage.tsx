@@ -48,10 +48,27 @@ export default function TextEditorPage() {
 
           if (ext === "json") setLanguage("json");
           else if (ext === "yml" || ext === "yaml") setLanguage("yaml");
+          else if (
+            ext === "css" ||
+            ext === "scss" ||
+            ext === "sass" ||
+            ext === "less"
+          )
+            setLanguage("css");
+          else if (
+            ext === "js" ||
+            ext === "jsx" ||
+            ext === "mjs" ||
+            ext === "cjs" ||
+            ext === "ts" ||
+            ext === "tsx"
+          )
+            setLanguage("javascript");
           else if (ext === "sh" || ext === "bash" || ext === "zsh")
             setLanguage("bash");
           else if (fileName === "Dockerfile" || ext === "dockerfile")
             setLanguage("docker");
+          else if (ext === "html" || ext === "htm") setLanguage("html");
           else if (
             ext === "gitignore" ||
             ext === "ignore" ||

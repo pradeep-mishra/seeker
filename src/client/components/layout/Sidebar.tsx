@@ -1,6 +1,16 @@
-import { Clock, HardDrive, Settings, Star, Trash2, X } from "lucide-react";
+import {
+  Clock,
+  Edit2,
+  Folder,
+  HardDrive,
+  Plus,
+  Settings,
+  Star,
+  Trash2,
+  X
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   mountsApi,
   recentApi,
@@ -12,10 +22,19 @@ import { useAuthStore } from "../../stores/authStore";
 import { useBookmarkStore } from "../../stores/bookmarkStore";
 import { useFileStore } from "../../stores/fileStore";
 import { useUIStore } from "../../stores/uiStore";
+import { useVirtualFolderStore } from "../../stores/virtualFolderStore";
+import { ConfirmDialog } from "../common/Dialog";
+import { toast } from "../common/Toast";
 
 export function Sidebar() {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { isSidebarOpen, mountsRefreshKey, setSidebarOpen } = useUIStore();
+  const {
+    isSidebarOpen,
+    mountsRefreshKey,
+    setSidebarOpen,
+    openVirtualFolderDialog
+  } = useUIStore();
   const { navigateToPath, currentPath } = useFileStore();
   const { user } = useAuthStore();
   const {
@@ -24,10 +43,23 @@ export function Sidebar() {
     removeBookmark,
     isLoading: bookmarksLoading
   } = useBookmarkStore();
+  const {
+    collections,
+    collectionsLoading,
+    loadCollections,
+    deleteCollection,
+    setActiveCollection
+  } = useVirtualFolderStore();
+  const { setCurrentMountTitle } = useUIStore();
 
   const [mounts, setMounts] = useState<Mount[]>([]);
   const [recentLocations, setRecentLocations] = useState<RecentLocation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [virtualToDelete, setVirtualToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isDeletingVirtual, setIsDeletingVirtual] = useState(false);
 
   // Load sidebar data
   useEffect(() => {
@@ -36,11 +68,13 @@ export function Sidebar() {
         const [mountsRes, recentRes] = await Promise.all([
           mountsApi.list(),
           recentApi.list(10),
-          loadBookmarks()
+          loadBookmarks(),
+          loadCollections()
         ]);
 
         setMounts(mountsRes.mounts);
         setRecentLocations(recentRes.recent);
+
       } catch (error) {
         console.error("Failed to load sidebar data:", error);
       } finally {
@@ -49,7 +83,9 @@ export function Sidebar() {
     };
 
     loadData();
-  }, [loadBookmarks, mountsRefreshKey]);
+
+    //setCurrentMountTitle(findMountForPath(path);
+  }, [loadBookmarks, loadCollections, mountsRefreshKey]);
 
   const findMountForPath = (path: string): Mount | null => {
     // Find the mount that this path belongs to
@@ -64,6 +100,11 @@ export function Sidebar() {
   const handleNavigate = (path: string, mount?: Mount | null) => {
     // If mount not provided, try to find it
     const targetMount = mount !== undefined ? mount : findMountForPath(path);
+
+    if (targetMount) {
+      // Set current mount title based on the target mount
+      setCurrentMountTitle(targetMount.label);
+    }
     navigateToPath(path, targetMount);
     navigate("/");
 
@@ -76,6 +117,69 @@ export function Sidebar() {
   const getPathName = (path: string) => {
     const parts = path.split("/").filter(Boolean);
     return parts[parts.length - 1] || path;
+  };
+
+  const currentVirtualId = searchParams.get("virtual");
+
+  const handleVirtualNavigate = (collectionId: string) => {
+    const params = new URLSearchParams();
+    params.set("virtual", collectionId);
+    navigate({ pathname: "/", search: params.toString() });
+    setActiveCollection(collectionId);
+
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+  };
+
+  const handleCreateVirtual = () => {
+    openVirtualFolderDialog({ mode: "create" });
+  };
+
+  const handleRenameVirtual = (id: string, currentName: string) => {
+    openVirtualFolderDialog({
+      mode: "rename",
+      collectionId: id,
+      initialName: currentName
+    });
+  };
+
+  const handleDeleteVirtual = async (id: string) => {
+    const collection = collections.find((item) => item.id === id);
+    if (!collection) return;
+    setVirtualToDelete({ id: collection.id, name: collection.name });
+  };
+
+  const handleConfirmDeleteVirtual = async () => {
+    if (!virtualToDelete) return;
+    setIsDeletingVirtual(true);
+
+    try {
+      const success = await deleteCollection(virtualToDelete.id);
+      if (!success) {
+        toast.error("Failed to delete virtual folder");
+        return;
+      }
+
+      const isViewingDeleted = currentVirtualId === virtualToDelete.id;
+      setActiveCollection(null);
+      setVirtualToDelete(null);
+
+      if (isViewingDeleted) {
+        if (mounts.length > 0) {
+          handleNavigate(mounts[0].path, mounts[0]);
+        } else {
+          navigate("/");
+        }
+      }
+    } finally {
+      setIsDeletingVirtual(false);
+    }
+  };
+
+  const handleCloseDeleteVirtual = () => {
+    if (isDeletingVirtual) return;
+    setVirtualToDelete(null);
   };
 
   return (
@@ -174,7 +278,7 @@ export function Sidebar() {
         <div className="p-3 border-b border-border">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-semibold text-content-tertiary uppercase tracking-wider">
-              Quick Access
+              Bookmarks
             </h3>
           </div>
 
@@ -211,6 +315,75 @@ export function Sidebar() {
                     title="Remove bookmark">
                     <X className="h-3.5 w-3.5 text-content-tertiary hover:text-error" />
                   </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Virtual Folders section */}
+        <div className="p-3 border-b border-border">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-semibold text-content-tertiary uppercase tracking-wider">
+              Virtual Folders
+            </h3>
+            <button
+              onClick={handleCreateVirtual}
+              className="p-1 rounded hover:bg-surface-hover transition-colors"
+              title="Create virtual folder">
+              <Plus className="h-4 w-4 text-content-tertiary" />
+            </button>
+          </div>
+
+          {collectionsLoading ? (
+            <div className="space-y-1">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-10 rounded skeleton" />
+              ))}
+            </div>
+          ) : collections.length === 0 ? (
+            <div className="text-sm text-content-tertiary p-2 text-center">
+              No virtual folders yet
+            </div>
+          ) : (
+            <div className="space-y-0.5">
+              {collections.map((collection) => (
+                <div key={collection.id} className="relative group">
+                  <button
+                    onClick={() => handleVirtualNavigate(collection.id)}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors text-left ${
+                      currentVirtualId === collection.id
+                        ? "bg-accent/10 text-accent"
+                        : "hover:bg-surface-hover text-content"
+                    }`}>
+                    <Folder className="h-4 w-4 text-content-tertiary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate font-medium">{collection.name}</p>
+                      <p className="text-xs text-content-tertiary">
+                        {collection.itemCount} items
+                      </p>
+                    </div>
+                  </button>
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRenameVirtual(collection.id, collection.name);
+                      }}
+                      className="p-1 rounded hover:bg-surface-active"
+                      title="Rename">
+                      <Edit2 className="h-3.5 w-3.5 text-content-tertiary" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteVirtual(collection.id);
+                      }}
+                      className="p-1 rounded hover:bg-surface-active"
+                      title="Delete">
+                      <Trash2 className="h-3.5 w-3.5 text-error" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -265,6 +438,22 @@ export function Sidebar() {
           )}
         </div>
       </aside>
+
+      <ConfirmDialog
+        isOpen={!!virtualToDelete}
+        onClose={handleCloseDeleteVirtual}
+        onConfirm={handleConfirmDeleteVirtual}
+        title="Delete Virtual Folder"
+        message={
+          virtualToDelete
+            ? `Remove "${virtualToDelete.name}"?`
+            : ""
+        }
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        isLoading={isDeletingVirtual}
+      />
     </>
   );
 }

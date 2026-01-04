@@ -29,6 +29,14 @@ interface DialogState {
   settings: boolean;
   getInfo: { isOpen: boolean; path: string };
   about: boolean;
+  virtualFolder: {
+    isOpen: boolean;
+    mode: "create" | "rename";
+    collectionId?: string;
+    initialName: string;
+    pendingPaths: string[];
+    clearSelectionOnComplete: boolean;
+  };
 }
 
 interface UIState {
@@ -47,6 +55,8 @@ interface UIState {
   isSidebarCollapsed: boolean;
   mountsRefreshKey: number;
 
+  currentMountTitle: string;
+
   // Context menu
   contextMenu: ContextMenuState;
 
@@ -55,6 +65,9 @@ interface UIState {
 
   // Loading states
   isSettingsLoading: boolean;
+
+  // Actions - Current mount title
+  setCurrentMountTitle: (title: string) => void;
 
   // Actions - Settings
   setViewMode: (mode: ViewMode) => void;
@@ -104,6 +117,14 @@ interface UIState {
   closeGetInfoDialog: () => void;
   openAboutDialog: () => void;
   closeAboutDialog: () => void;
+  openVirtualFolderDialog: (options?: {
+    mode?: "create" | "rename";
+    collectionId?: string;
+    initialName?: string;
+    pendingPaths?: string[];
+    clearSelectionOnComplete?: boolean;
+  }) => void;
+  closeVirtualFolderDialog: () => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -120,6 +141,8 @@ export const useUIStore = create<UIState>()(
       isSidebarOpen: true,
       isSidebarCollapsed: false,
       mountsRefreshKey: 0,
+
+      currentMountTitle: "", // title of the current mount which is shown in the breadcrumb
 
       contextMenu: {
         isOpen: false,
@@ -141,10 +164,21 @@ export const useUIStore = create<UIState>()(
         },
         settings: false,
         getInfo: { isOpen: false, path: "" },
-        about: false
+        about: false,
+        virtualFolder: {
+          isOpen: false,
+          mode: "create",
+          initialName: "",
+          pendingPaths: [],
+          clearSelectionOnComplete: false
+        }
       },
 
       isSettingsLoading: false,
+
+      setCurrentMountTitle: (title) => {
+        set({ currentMountTitle: title });
+      },
 
       // Settings actions
       setViewMode: (mode) => {
@@ -386,6 +420,39 @@ export const useUIStore = create<UIState>()(
       closeAboutDialog: () => {
         set({
           dialogs: { ...get().dialogs, about: false }
+        });
+      },
+
+      openVirtualFolderDialog: (options) => {
+        set({
+          dialogs: {
+            ...get().dialogs,
+            virtualFolder: {
+              isOpen: true,
+              mode: options?.mode ?? "create",
+              collectionId: options?.collectionId,
+              initialName: options?.initialName ?? "",
+              pendingPaths: options?.pendingPaths ?? [],
+              clearSelectionOnComplete:
+                options?.clearSelectionOnComplete ?? false
+            }
+          }
+        });
+      },
+
+      closeVirtualFolderDialog: () => {
+        set({
+          dialogs: {
+            ...get().dialogs,
+            virtualFolder: {
+              isOpen: false,
+              mode: "create",
+              collectionId: undefined,
+              initialName: "",
+              pendingPaths: [],
+              clearSelectionOnComplete: false
+            }
+          }
         });
       }
     }),

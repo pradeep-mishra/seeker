@@ -1,5 +1,5 @@
 import { FolderUp } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   EmptyStates,
@@ -9,19 +9,24 @@ import {
   Toolbar,
   WarningBanner
 } from "../components/browserpage";
+import { LoadingSpinner } from "../components/common/LoadingScreen";
+import { toast } from "../components/common/Toast";
 import { CreateFileDialog } from "../components/dialogs/CreateFileDialog";
 import { CreateFolderDialog } from "../components/dialogs/CreateFolderDialog";
 import { DeleteDialog } from "../components/dialogs/DeleteDialog";
 import { GetInfoDialog } from "../components/dialogs/GetInfoDialog";
 import { RenameDialog } from "../components/dialogs/RenameDialog";
+import { VirtualFolderDialog } from "../components/dialogs/VirtualFolderDialog";
 import { FileContextMenu } from "../components/files/FileContextMenu";
 import { mountsApi, type Mount } from "../lib/api";
+import { collectUploadItemsFromDataTransfer } from "../lib/uploadUtils";
 import { useFileUpload } from "../lib/useFileUpload";
 import { useLassoSelection } from "../lib/useLassoSelection";
 import { useAuthStore } from "../stores/authStore";
 import { useFileStore } from "../stores/fileStore";
 import { useSelectionStore } from "../stores/selectionStore";
 import { useUIStore } from "../stores/uiStore";
+import { useVirtualFolderStore } from "../stores/virtualFolderStore";
 
 /**
  * Find the mount that a path belongs to.
@@ -78,12 +83,54 @@ export default function BrowserPage() {
   const { viewMode, loadSettings, dialogs, openCreateFolderDialog } =
     useUIStore();
   const { clearSelection, selectAll, selectedPaths } = useSelectionStore();
+  const {
+    activeCollectionId,
+    setActiveCollection,
+    loadCollectionItems,
+    itemsByCollection,
+    itemsLoading
+  } = useVirtualFolderStore();
 
   const [mounts, setMounts] = useState<Mount[]>([]);
   const [isInitializing, setIsInitializing] = useState(true);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragDepthRef = useRef(0);
   const { uploadFiles } = useFileUpload();
+
+  const virtualCollectionId = searchParams.get("virtual");
+  const isVirtualView = Boolean(virtualCollectionId);
+  const virtualItemsRaw = virtualCollectionId
+    ? itemsByCollection[virtualCollectionId]
+    : undefined;
+  const hasVirtualItems = Array.isArray(virtualItemsRaw);
+  const virtualItems = hasVirtualItems ? virtualItemsRaw! : [];
+  const virtualItemsLoading = virtualCollectionId
+    ? itemsLoading[virtualCollectionId] || false
+    : false;
+  const normalizedSearchQuery = searchQuery
+    ? searchQuery.toLowerCase().trim()
+    : "";
+  const displayedFiles = useMemo(() => {
+    if (!isVirtualView) {
+      return files;
+    }
+
+    const source = virtualItems;
+
+    if (!normalizedSearchQuery) {
+      return source;
+    }
+
+    return source.filter((item) =>
+      item.name.toLowerCase().includes(normalizedSearchQuery)
+    );
+  }, [isVirtualView, files, virtualItems, normalizedSearchQuery]);
+  const displayIsLoading = isVirtualView
+    ? virtualItemsLoading || !hasVirtualItems
+    : isLoading;
+  const displayHasMore = isVirtualView ? false : hasMore;
+  const effectiveError = isVirtualView ? null : error;
+  const showWarning = !isVirtualView ? warning : null;
 
   // Ref for infinite scroll observer
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
@@ -94,7 +141,7 @@ export default function BrowserPage() {
   // Lasso selection hook
   const { selectionBox, handleMouseDown, isDragging } = useLassoSelection({
     containerRef,
-    files,
+    files: displayedFiles,
     clearSelection,
     selectAll
   });
@@ -114,8 +161,21 @@ export default function BrowserPage() {
 
         // Try to get path from URL query string
         const urlPath = searchParams.get("path");
+        const urlVirtual = searchParams.get("virtual");
 
-        if (urlPath) {
+        if (urlVirtual) {
+          setActiveCollection(urlVirtual);
+          try {
+            await loadCollectionItems(urlVirtual, { force: true });
+            setIsInitializing(false);
+            return;
+          } catch (error) {
+            console.error("Failed to load virtual folder from URL:", error);
+            const nextParams = new URLSearchParams(searchParams);
+            nextParams.delete("virtual");
+            setSearchParams(nextParams, { replace: true });
+          }
+        } else if (urlPath) {
           try {
             const decodedPath = decodeURIComponent(urlPath);
 
@@ -176,6 +236,25 @@ export default function BrowserPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
+  useEffect(() => {
+    if (!virtualCollectionId) {
+      if (activeCollectionId) {
+        setActiveCollection(null);
+      }
+      return;
+    }
+
+    setActiveCollection(virtualCollectionId);
+    loadCollectionItems(virtualCollectionId).catch((error) => {
+      console.error("Failed to load virtual folder items:", error);
+      toast.error("Unable to load virtual folder");
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("virtual");
+      setSearchParams(nextParams, { replace: true });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [virtualCollectionId]);
+
   // Find mount for path if not set (when navigating from other components)
   useEffect(() => {
     if (!isInitializing && currentPath && mounts.length > 0 && !currentMount) {
@@ -188,27 +267,46 @@ export default function BrowserPage() {
 
   // Load files when currentPath changes
   useEffect(() => {
+    if (isVirtualView) {
+      return;
+    }
     if (currentPath) {
       loadFiles();
       clearSelection();
     }
-  }, [currentPath, loadFiles, clearSelection]);
+  }, [currentPath, loadFiles, clearSelection, isVirtualView]);
+
+  useEffect(() => {
+    if (isVirtualView) {
+      clearSelection();
+    }
+  }, [isVirtualView, clearSelection]);
 
   // Update URL query string when currentPath changes (but not during initial load)
   useEffect(() => {
-    if (!isInitializing && currentPath) {
-      const currentUrlPath = searchParams.get("path");
-      const encodedPath = encodeURIComponent(currentPath);
-
-      // Only update if URL is different to avoid unnecessary navigation
-      if (currentUrlPath !== encodedPath) {
-        setSearchParams({ path: encodedPath }, { replace: true });
-      }
+    if (isVirtualView || isInitializing || !currentPath) {
+      return;
     }
-  }, [currentPath, isInitializing, searchParams, setSearchParams]);
+
+    const currentUrlPath = searchParams.get("path");
+    const encodedPath = encodeURIComponent(currentPath);
+
+    if (currentUrlPath !== encodedPath) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set("path", encodedPath);
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [
+    currentPath,
+    isInitializing,
+    searchParams,
+    setSearchParams,
+    isVirtualView
+  ]);
 
   // Infinite scroll observer
   useEffect(() => {
+    if (isVirtualView) return;
     const trigger = loadMoreTriggerRef.current;
     if (!trigger || !hasMore || isLoading) return;
 
@@ -226,7 +324,7 @@ export default function BrowserPage() {
     return () => {
       observer.disconnect();
     };
-  }, [hasMore, isLoading, loadMore]);
+  }, [hasMore, isLoading, loadMore, isVirtualView]);
 
   // Handle drag end to reset state if user cancels drag
   useEffect(() => {
@@ -255,6 +353,7 @@ export default function BrowserPage() {
 
   // Handle drag and drop file upload
   const handleDragEnter = (e: React.DragEvent) => {
+    if (isVirtualView) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -266,6 +365,7 @@ export default function BrowserPage() {
   };
 
   const handleDragOver = (e: React.DragEvent) => {
+    if (isVirtualView) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -276,6 +376,7 @@ export default function BrowserPage() {
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
+    if (isVirtualView) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -289,15 +390,25 @@ export default function BrowserPage() {
   };
 
   const handleDrop = async (e: React.DragEvent) => {
+    if (isVirtualView) return;
     e.preventDefault();
     e.stopPropagation();
     dragDepthRef.current = 0;
     setIsDraggingOver(false);
 
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length === 0) return;
+    const { items: uploadItems, isUnsupportedDirectory } =
+      await collectUploadItemsFromDataTransfer(e.dataTransfer);
 
-    await uploadFiles(files);
+    if (isUnsupportedDirectory) {
+      toast.info(
+        "Folder drag & drop is not supported in this browser. Use the folder picker or switch to Chrome/Edge."
+      );
+      return;
+    }
+
+    if (uploadItems.length === 0) return;
+
+    await uploadFiles(uploadItems);
   };
 
   // Render loading state
@@ -310,8 +421,8 @@ export default function BrowserPage() {
     return <EmptyStates type="noMounts" isAdmin={user?.isAdmin} />;
   }
 
-  // Render no path selected state
-  if (!currentPath) {
+  // Render no path selected state (physical mounts only)
+  if (!currentPath && !isVirtualView) {
     return (
       <EmptyStates
         type="noPath"
@@ -334,23 +445,32 @@ export default function BrowserPage() {
       <Toolbar />
 
       {/* Warning banner for large directories */}
-      {warning && <WarningBanner message={warning} />}
+      {showWarning && <WarningBanner message={showWarning} />}
 
       {/* Error state or File list */}
-      {error ? (
-        <EmptyStates type="error" errorMessage={error} onRefresh={refresh} />
+      {effectiveError ? (
+        <EmptyStates
+          type="error"
+          errorMessage={effectiveError}
+          onRefresh={refresh}
+        />
+      ) : isVirtualView && !hasVirtualItems ? (
+        <div className="flex-1 flex items-center justify-center">
+          <LoadingSpinner size="lg" />
+        </div>
       ) : (
         <FileListContainer
-          files={files}
-          isLoading={isLoading}
-          hasMore={hasMore}
+          files={displayedFiles}
+          isLoading={displayIsLoading}
+          hasMore={displayHasMore}
           viewMode={viewMode}
           containerRef={containerRef}
           loadMoreTriggerRef={loadMoreTriggerRef}
           onContextMenu={handleBackgroundContextMenu}
           onMouseDown={handleMouseDown}
-          onCreateFolder={openCreateFolderDialog}
+          onCreateFolder={isVirtualView ? () => {} : openCreateFolderDialog}
           searchQuery={searchQuery}
+          emptyVariant={isVirtualView ? "virtual" : "default"}
         />
       )}
 
@@ -362,10 +482,10 @@ export default function BrowserPage() {
               <FolderUp className="h-10 w-10 text-accent" />
             </div>
             <div className="text-lg font-semibold text-content mb-2">
-              Drop files to upload
+              Drop files or folders to upload
             </div>
             <div className="text-sm text-content-secondary">
-              Files will be uploaded to {currentPath}
+              Items will be uploaded to {currentPath}
             </div>
           </div>
         </div>
@@ -383,6 +503,7 @@ export default function BrowserPage() {
       <RenameDialog />
       <DeleteDialog />
       <GetInfoDialog />
+      <VirtualFolderDialog />
 
       {/* Context menu */}
       <FileContextMenu />

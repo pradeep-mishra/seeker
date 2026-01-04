@@ -4,30 +4,35 @@ import {
   Download,
   FilePlus,
   FileText,
+  Folder,
   FolderOpen,
   FolderPlus,
   Image,
   Info,
   Pencil,
+  Plus,
   Scissors,
   Star,
   Trash2,
-  Video
+  Video,
+  X
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { filesApi } from "../../lib/api";
 import { getFileName, isImage, isTextFile, isVideo } from "../../lib/utils";
 import { useBookmarkStore } from "../../stores/bookmarkStore";
 import { useFileStore } from "../../stores/fileStore";
 import { useSelectionStore } from "../../stores/selectionStore";
 import { useUIStore } from "../../stores/uiStore";
+import { useVirtualFolderStore } from "../../stores/virtualFolderStore";
 import { toast } from "../common/Toast";
 
 export function FileContextMenu() {
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [adjustedPosition, setAdjustedPosition] = useState<{
     x: number;
     y: number;
@@ -39,7 +44,8 @@ export function FileContextMenu() {
     openDeleteDialog,
     openCreateFolderDialog,
     openCreateFileDialog,
-    openGetInfoDialog
+    openGetInfoDialog,
+    openVirtualFolderDialog
   } = useUIStore();
   const {
     getSelectedPaths,
@@ -51,6 +57,8 @@ export function FileContextMenu() {
   } = useSelectionStore();
   const { files, currentPath, navigateToPath, refresh } = useFileStore();
   const { addBookmark } = useBookmarkStore();
+  const { collections, addItemsToCollection, removeItemByPath } =
+    useVirtualFolderStore();
 
   // Reset adjusted position when context menu opens
   useEffect(() => {
@@ -273,11 +281,71 @@ export function FileContextMenu() {
     currentPath
   ]);
 
+  const handleAddToVirtualFolder = useCallback(
+    async (collectionId: string) => {
+      const paths = getSelectedPaths();
+      if (!paths.length) return;
+
+      try {
+        await addItemsToCollection(
+          collectionId,
+          paths.map((path) => ({ path }))
+        );
+        toast.success("Added to virtual folder");
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to add to virtual folder"
+        );
+      }
+      closeContextMenu();
+    },
+    [getSelectedPaths, addItemsToCollection, closeContextMenu]
+  );
+
+  const handleRemoveFromVirtualFolder = useCallback(async () => {
+    const currentVirtualId = searchParams.get("virtual");
+    if (!currentVirtualId) return;
+
+    const paths = getSelectedPaths();
+    if (!paths.length) return;
+
+    try {
+      await Promise.all(
+        paths.map((path) => removeItemByPath(currentVirtualId, path))
+      );
+      toast.success("Removed from virtual folder");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to remove from virtual folder"
+      );
+    }
+    closeContextMenu();
+  }, [searchParams, getSelectedPaths, removeItemByPath, closeContextMenu]);
+
+  const handleCreateVirtualFolder = useCallback(() => {
+    const paths = getSelectedPaths();
+    if (!paths.length) return;
+
+    const initialName = paths.length === 1 ? getFileName(paths[0]) || "" : "";
+
+    openVirtualFolderDialog({
+      mode: "create",
+      initialName,
+      pendingPaths: paths
+    });
+    closeContextMenu();
+  }, [getSelectedPaths, openVirtualFolderDialog, closeContextMenu]);
+
   if (!contextMenu.isOpen) return null;
 
   const selectedCount = getSelectedPaths().length;
   const isMultiple = selectedCount > 1;
-  const canPaste = hasClipboard();
+  const isVirtualView = Boolean(searchParams.get("virtual"));
+  const canPaste = hasClipboard() && !isVirtualView;
 
   // Check if the target file is a text file, image file, or video file
   const targetFile = contextMenu.targetPath
@@ -390,7 +458,7 @@ export function FileContextMenu() {
       )}
 
       {/* Background context menu items */}
-      {contextMenu.type === "background" && (
+      {contextMenu.type === "background" && !isVirtualView && (
         <>
           <button onClick={handleNewFolder} className="context-menu-item">
             <FolderPlus className="h-4 w-4" />
@@ -410,12 +478,55 @@ export function FileContextMenu() {
           </button>
         </>
       )}
+      {contextMenu.type === "background" && isVirtualView && (
+        <button onClick={handleGetInfo} className="context-menu-item">
+          <Info className="h-4 w-4" />
+          Get Info
+        </button>
+      )}
+
+      {contextMenu.type !== "background" && (
+        <>
+          <div className="context-menu-separator" />
+          {collections.length > 0 && (
+            <>
+              <div className="px-3 py-1 text-[10px] uppercase text-content-tertiary">
+                Virtual Folders
+              </div>
+              {collections.slice(0, 6).map((collection) => (
+                <button
+                  key={collection.id}
+                  onClick={() => handleAddToVirtualFolder(collection.id)}
+                  className="context-menu-item">
+                  <Folder className="h-4 w-4" />
+                  Add to {collection.name}
+                </button>
+              ))}
+            </>
+          )}
+
+          <button
+            onClick={handleCreateVirtualFolder}
+            className="context-menu-item">
+            <Plus className="h-4 w-4" />
+            Add to new virtual folder
+          </button>
+
+          {searchParams.get("virtual") && (
+            <button
+              onClick={handleRemoveFromVirtualFolder}
+              className="context-menu-item">
+              <X className="h-4 w-4" />
+              Remove from this virtual folder
+            </button>
+          )}
+        </>
+      )}
 
       {/* Delete option */}
       {contextMenu.type !== "background" && (
         <>
           <div className="context-menu-separator" />
-
           <button onClick={handleDelete} className="context-menu-item danger">
             <Trash2 className="h-4 w-4" />
             Delete{isMultiple ? ` (${selectedCount})` : ""}

@@ -1,3 +1,6 @@
+import { css } from "@codemirror/lang-css";
+import { html } from "@codemirror/lang-html";
+import { javascript } from "@codemirror/lang-javascript";
 import { json } from "@codemirror/lang-json";
 import { yaml } from "@codemirror/lang-yaml";
 import { StreamLanguage } from "@codemirror/language";
@@ -22,7 +25,7 @@ export default function CodeMirrorEditor({
   content,
   language,
   onChange,
-  className
+  className,
 }: CodeMirrorEditorProps) {
   const theme = useUIStore((state) => state.theme);
   const isDark = theme === "dark";
@@ -33,16 +36,45 @@ export default function CodeMirrorEditor({
     // Add language support based on the language prop
     switch (language) {
       case "json":
+      case "jsonc":
         exts.push(json());
         break;
       case "yaml":
+      case "yml":
         exts.push(yaml());
         break;
+      case "css":
+      case "scss":
+      case "sass":
+      case "less":
+        exts.push(css());
+        break;
+      case "ts":
+      case "typescript":
+      case "tsx":
+        exts.push(javascript({ jsx: true, typescript: true }));
+        break;
+      case "js":
+      case "jsx":
+      case "mjs":
+      case "cjs":
+
+      case "javascript":
+        exts.push(javascript({ jsx: true, typescript: true }));
+        break;
       case "bash":
+      case "sh":
+      case "zsh":
         exts.push(StreamLanguage.define(shell));
         break;
       case "docker":
+      case "Dockerfile":
+      case "dockerfile":
         exts.push(StreamLanguage.define(dockerFile));
+        break;
+      case "html":
+      case "htm":
+        exts.push(html());
         break;
       case "ini":
       case "ignore":
@@ -64,31 +96,31 @@ export default function CodeMirrorEditor({
       {
         "&": {
           color: isDark ? "var(--color-content)" : "#111827",
-          backgroundColor: isDark ? "var(--color-surface)" : "#ffffff"
+          backgroundColor: isDark ? "var(--color-surface)" : "#ffffff",
         },
         ".cm-content": {
-          caretColor: isDark ? "var(--color-content)" : "#111827"
+          caretColor: isDark ? "var(--color-content)" : "#111827",
         },
         ".cm-content ::selection": {
           backgroundColor: selectionBackground,
-          color: selectionText
+          color: selectionText,
         },
         ".cm-selectionBackground, .cm-selectionLayer .selection": {
-          backgroundColor: selectionBackground
+          backgroundColor: selectionBackground,
         },
         "&.cm-focused .cm-cursor": {
-          borderLeftColor: isDark ? "var(--color-content)" : "#111827"
+          borderLeftColor: isDark ? "var(--color-content)" : "#111827",
         },
         ".cm-selectionMatch": {
           backgroundColor: isDark
             ? "rgba(96, 165, 250, 0.15)"
-            : "rgba(59, 130, 246, 0.15)"
+            : "rgba(59, 130, 246, 0.15)",
         },
         ".cm-gutters": {
           backgroundColor: "transparent",
           color: isDark ? "var(--color-content-tertiary)" : "#9ca3af",
-          border: "none"
-        }
+          border: "none",
+        },
       },
       { dark: isDark }
     );
@@ -127,12 +159,12 @@ export default function CodeMirrorEditor({
             searchKeymap: true,
             foldKeymap: true,
             completionKeymap: true,
-            lintKeymap: true
+            lintKeymap: true,
           }}
           style={{
             fontSize: "14px",
             fontFamily: "monospace",
-            height: "100%"
+            height: "100%",
           }}
         />
       </div>

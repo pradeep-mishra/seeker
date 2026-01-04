@@ -5,3 +5,4 @@ export { mountRoutes } from "./mounts";
 export { recentRoutes } from "./recent";
 export { settingsRoutes } from "./settings";
 export { userRoutes } from "./users";
+export { virtualFolderRoutes } from "./virtualFolders";

@@ -1,8 +1,17 @@
 import { ChevronRight, Home } from "lucide-react";
 import { getMountRelativePath, parsePath } from "../../lib/utils";
 import { useFileStore } from "../../stores/fileStore";
+import { useUIStore } from "../../stores/uiStore";
 
-export function Breadcrumb() {
+interface BreadcrumbProps {
+  isVirtualView?: boolean;
+}
+
+export function Breadcrumb({ isVirtualView = false }: BreadcrumbProps) {
+  if (isVirtualView) {
+    return null;
+  }
+
   const {
     currentPath,
     currentMount,
@@ -12,6 +21,8 @@ export function Breadcrumb() {
     canGoBack,
     canGoForward
   } = useFileStore();
+  const { currentMountTitle } = useUIStore();
+  const mountTitle = currentMount?.label || currentMountTitle || "";
 
   // Get path relative to mount root
   const relativePath = currentMount
@@ -67,10 +78,13 @@ export function Breadcrumb() {
             <li className="flex items-center shrink-0">
               <button
                 onClick={handleNavigateToRoot}
-                className="p-1.5 rounded hover:bg-surface-hover transition-colors select-none"
-                title="Go to root"
+                className="p-1.5 rounded hover:bg-surface-hover transition-colors select-none flex items-center gap-1"
+                title={mountTitle}
                 aria-label="Go to root">
                 <Home className="h-4 w-4 text-content-secondary" />
+                <span className="text-sm truncate select-none">
+                  {mountTitle}
+                </span>
               </button>
             </li>
           </ol>
@@ -81,10 +95,13 @@ export function Breadcrumb() {
               <li className="flex items-center shrink-0">
                 <button
                   onClick={handleNavigateToRoot}
-                  className="p-1.5 rounded hover:bg-surface-hover transition-colors select-none"
-                  title="Go to root"
+                  className="p-1.5 rounded hover:bg-surface-hover transition-colors select-none flex items-center gap-1"
+                  title={mountTitle}
                   aria-label="Go to root">
                   <Home className="h-4 w-4 text-content-secondary" />
+                  <span className="text-sm truncate select-none">
+                    {mountTitle}
+                  </span>
                 </button>
               </li>
 

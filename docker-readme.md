@@ -17,7 +17,9 @@ A beautiful, fast, and secure web-based file browser built with Bun, Elysia, and
 - **Smart Search** - Quick file and folder navigation
 - **Thumbnails** - Automatic image and PDF thumbnail generation
 - **File Upload** - Chunked uploads with resume support
+- **Folder Upload** - Upload whole directories while keeping their structure
 - **Multiple Mounts** - Access different directories through a single interface
+- **Virtual Folders** - Build collections of files from multiple mounts without moving them
 - **Health Checks** - Built-in health monitoring
 - **Non-root** - Runs as unprivileged user (UID | 1000)
 
@@ -80,6 +82,15 @@ Seeker includes a powerful built-in text editor with syntax highlighting support
 - **Line Numbers**: Easy navigation with line numbering
 
 Simply click on any text file to open it in the editor.
+
+### Virtual Folders
+
+Create smart collections without duplicating files:
+
+- **Cross-Mount Collections**: Add files and folders from any mount into a single virtual folder
+- **Non-Destructive**: Items stay in their original locations; virtual folders store references only
+- **Flexible Management**: Create, rename, reorder, and delete collections without touching your filesystem
+- **Easy Adding/Removing**: Use multi-select actions or context menus to manage membership quickly
 
 ### Image Preview
 

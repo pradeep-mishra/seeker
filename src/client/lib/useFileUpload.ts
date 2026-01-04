@@ -1,17 +1,22 @@
 import { useRef } from "react";
 import { toast } from "../components/common/Toast";
 import { useFileStore } from "../stores/fileStore";
-import { filesApi } from "./api";
+import { filesApi, type UploadItem } from "./api";
 
 export function useFileUpload() {
   const { currentPath, refresh } = useFileStore();
   const uploadToastIdRef = useRef<string | null>(null);
   const uploadAbortControllerRef = useRef<AbortController | null>(null);
 
-  const uploadFiles = async (files: File[]) => {
-    if (!currentPath || uploadToastIdRef.current) return;
+  const uploadFiles = async (items: UploadItem[]) => {
+    if (!currentPath) return;
 
-    if (files.length === 0) return;
+    if (uploadToastIdRef.current) {
+      toast.info("An upload is already in progress. Please wait or cancel it.");
+      return;
+    }
+
+    if (items.length === 0) return;
 
     // Initialize abort controller
     const abortController = new AbortController();
@@ -19,7 +24,7 @@ export function useFileUpload() {
 
     // Create progress toast
     const toastId = toast.progress(
-      `Uploading ${files.length} file${files.length !== 1 ? "s" : ""}...`,
+      `Uploading ${items.length} file${items.length !== 1 ? "s" : ""}...`,
       0,
       () => {
         // On cancel
@@ -35,7 +40,7 @@ export function useFileUpload() {
     try {
       const result = await filesApi.upload(
         currentPath,
-        files,
+        items,
         (progress) => {
           // Scale progress to 90% during upload phase
           // Reserve 90-100% for server processing

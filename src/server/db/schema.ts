@@ -75,6 +75,39 @@ export const bookmarks = sqliteTable("bookmarks", {
 });
 
 /**
+ * Virtual collections - user-defined groupings of files/folders
+ */
+export const virtualCollections = sqliteTable("virtual_collections", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`)
+});
+
+/**
+ * Virtual collection items - paths saved inside a collection
+ */
+export const virtualCollectionItems = sqliteTable("virtual_collection_items", {
+  id: text("id").primaryKey(),
+  collectionId: text("collection_id")
+    .notNull()
+    .references(() => virtualCollections.id, { onDelete: "cascade" }),
+  path: text("path").notNull(),
+  label: text("label"),
+  addedAt: integer("added_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`)
+});
+
+/**
  * Recent locations table - stores user's recently visited directories
  */
 export const recentLocations = sqliteTable("recent_locations", {
@@ -138,6 +171,13 @@ export type NewMount = typeof mounts.$inferInsert;
 
 export type Bookmark = typeof bookmarks.$inferSelect;
 export type NewBookmark = typeof bookmarks.$inferInsert;
+
+export type VirtualCollection = typeof virtualCollections.$inferSelect;
+export type NewVirtualCollection = typeof virtualCollections.$inferInsert;
+
+export type VirtualCollectionItem = typeof virtualCollectionItems.$inferSelect;
+export type NewVirtualCollectionItem =
+  typeof virtualCollectionItems.$inferInsert;
 
 export type RecentLocation = typeof recentLocations.$inferSelect;
 export type NewRecentLocation = typeof recentLocations.$inferInsert;

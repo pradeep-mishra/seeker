@@ -1,6 +1,6 @@
 {
   "name": "seeker",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "A web-based file browser for home servers",
   "type": "module",
   "scripts": {
@@ -27,6 +27,9 @@
     "update-package-lock": "npm install --package-lock-only"
   },
   "dependencies": {
+    "@codemirror/lang-css": "^6.2.1",
+    "@codemirror/lang-html": "^6.4.8",
+    "@codemirror/lang-javascript": "^6.2.2",
     "@codemirror/lang-json": "^6.0.2",
     "@codemirror/lang-yaml": "^6.1.2",
     "@codemirror/language": "^6.10.6",

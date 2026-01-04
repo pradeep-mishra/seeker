@@ -631,6 +631,108 @@ export const bookmarksApi = {
 };
 
 // ============================================
+// Virtual Folders API
+// ============================================
+
+export interface VirtualCollection {
+  id: string;
+  userId: string;
+  name: string;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VirtualCollectionSummary extends VirtualCollection {
+  itemCount: number;
+}
+
+export interface VirtualCollectionItem extends FileItem {
+  virtualItemId: string;
+  virtualCollectionId: string;
+  virtualLabel: string | null;
+  virtualAddedAt: string;
+}
+
+export interface VirtualCollectionItemsResponse {
+  items: VirtualCollectionItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface AddVirtualFolderEntry {
+  path: string;
+  label?: string;
+}
+
+export const virtualFoldersApi = {
+  list: () =>
+    api
+      .get("virtual-folders")
+      .json<{ collections: VirtualCollectionSummary[] }>(),
+
+  create: (name: string) =>
+    api
+      .post("virtual-folders", { json: { name } })
+      .json<{
+        success: boolean;
+        collection?: VirtualCollection;
+        error?: string;
+      }>(),
+
+  rename: (id: string, name: string) =>
+    api
+      .patch(`virtual-folders/${id}`, { json: { name } })
+      .json<{ success: boolean; error?: string }>(),
+
+  reorder: (orderedIds: string[]) =>
+    api
+      .patch("virtual-folders/reorder", { json: { orderedIds } })
+      .json<{ success: boolean; error?: string }>(),
+
+  remove: (id: string) =>
+    api
+      .delete(`virtual-folders/${id}`)
+      .json<{ success: boolean; error?: string }>(),
+
+  listItems: (
+    id: string,
+    params: { page?: number; limit?: number; search?: string } = {}
+  ) => {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.set("page", String(params.page));
+    if (params.limit) searchParams.set("limit", String(params.limit));
+    if (params.search) searchParams.set("search", params.search);
+
+    const query = searchParams.toString();
+    const suffix = query ? `?${query}` : "";
+
+    return api
+      .get(`virtual-folders/${id}/items${suffix}`)
+      .json<VirtualCollectionItemsResponse>();
+  },
+
+  addItems: (id: string, entries: AddVirtualFolderEntry[]) =>
+    api.post(`virtual-folders/${id}/items`, { json: { entries } }).json<{
+      success: boolean;
+      added?: VirtualCollectionItem[];
+      skipped?: string[];
+      error?: string;
+    }>(),
+
+  removeItem: (collectionId: string, itemId: string) =>
+    api
+      .delete(`virtual-folders/${collectionId}/items/${itemId}`)
+      .json<{ success: boolean; error?: string }>(),
+
+  cleanup: (collectionId: string) =>
+    api
+      .post(`virtual-folders/${collectionId}/items/cleanup`)
+      .json<{ success: boolean; removed: number; error?: string }>()
+};
+
+// ============================================
 // Recent API
 // ============================================
 

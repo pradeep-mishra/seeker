@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { filesApi, type FileItem, type Mount } from "../lib/api";
+import { useUIStore } from "./uiStore";
 
 interface FileState {
   // Current path state
@@ -100,6 +101,8 @@ export const useFileStore = create<FileState>((set, get) => ({
   // Set current mount
   setCurrentMount: (mount) => {
     set({ currentMount: mount });
+    // Keep mount title in sync for breadcrumb display
+    useUIStore.getState().setCurrentMountTitle(mount?.label ?? "");
   },
 
   // Load files for current path

@@ -14,3 +14,7 @@ export { settingsService, SettingsService } from "./settingsService";
 export type { AppSettings } from "./settingsService";
 export { thumbnailService, ThumbnailService } from "./thumbnailService";
 export { uploadService, UploadService } from "./uploadService";
+export {
+  virtualFolderService,
+  VirtualFolderService
+} from "./virtualFolderService";

@@ -4,6 +4,7 @@ import { getFileName } from "../../lib/utils";
 import { useFileStore } from "../../stores/fileStore";
 import { useSelectionStore } from "../../stores/selectionStore";
 import { useUIStore } from "../../stores/uiStore";
+import { useVirtualFolderStore } from "../../stores/virtualFolderStore";
 import { ConfirmDialog } from "../common/Dialog";
 import { toast } from "../common/Toast";
 
@@ -11,6 +12,7 @@ export function DeleteDialog() {
   const { dialogs, closeDeleteDialog } = useUIStore();
   const { removeFiles } = useFileStore();
   const { clearSelection } = useSelectionStore();
+  const { handlePathChange } = useVirtualFolderStore();
   const [isLoading, setIsLoading] = useState(false);
 
   const { isOpen, paths } = dialogs.delete;
@@ -55,6 +57,7 @@ export function DeleteDialog() {
       // Optimistically remove successful items without triggering full reload
       if (successfulPaths.length > 0) {
         removeFiles(successfulPaths);
+        successfulPaths.forEach((path) => handlePathChange(path));
       }
 
       clearSelection();

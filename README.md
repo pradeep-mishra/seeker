@@ -13,6 +13,7 @@ A modern, native-feeling web-based file browser for home servers. Seeker provide
 - **File Operations** - Copy, move, rename, delete files and folders with conflict resolution
 - **Batch Operations** - Select multiple files for bulk operations
 - **Upload Support** - Drag-and-drop uploads with progress tracking
+- **Folder Uploads** - Upload entire directories while preserving structure
 - **Download** - Single or multiple file downloads
 - **Built-in Text Editor** - Edit text files directly with syntax highlighting for JSON, YAML, YML, ENV, and more
 
@@ -35,6 +36,7 @@ A modern, native-feeling web-based file browser for home servers. Seeker provide
 
 - **Bookmarks** - Pin frequently accessed folders for quick access
 - **Recent Locations** - Track recently visited directories
+- **Virtual Folders** - Build collections of files from multiple mounts without moving them
 - **Search** - Search files by name with optional recursive search
 - **Sorting** - Sort by name, date, size, or type (ascending/descending)
 - **Hidden Files** - Toggle visibility of hidden files (dotfiles)
@@ -68,6 +70,15 @@ Seeker includes a powerful CodeMirror-powered text editor with syntax highlighti
 - **Line Numbers**: Easy navigation with line numbering
 
 Simply click on any text file to open it in the editor.
+
+### Virtual Folders
+
+Create smart collections without duplicating files:
+
+- **Cross-Mount Collections**: Add files and folders from any mount into a single virtual folder
+- **Non-Destructive**: Items stay in their original locations; virtual folders store references only
+- **Flexible Management**: Create, rename, reorder, and delete collections without touching your filesystem
+- **Easy Adding/Removing**: Use multi-select actions or context menus to manage membership quickly
 
 ### Image Preview
 
@@ -166,12 +177,12 @@ services:
 ### 2. Start the Container
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### 3. Access Seeker
 
-Open your browser and navigate to `http://localhost:3000`
+Open your browser and navigate to `http://{Docker Address}:7335`
 
 On first access, you'll be prompted to create an admin account.
 
@@ -200,6 +211,8 @@ bun run dev
 bun run dev:server  # Backend on http://localhost:3000
 bun run dev:client  # Frontend on http://localhost:5173
 ```
+
+Open your browser and navigate to `http://localhost:5173`
 
 ### 4. Build for Production
 

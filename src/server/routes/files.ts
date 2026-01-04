@@ -7,7 +7,8 @@ import {
   recentService,
   settingsService,
   thumbnailService,
-  uploadService
+  uploadService,
+  virtualFolderService
 } from "../services";
 import { generateId } from "../utils";
 
@@ -536,6 +537,10 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
         return { error: result.error };
       }
 
+      if (result.path) {
+        await virtualFolderService.handlePathChange(path, result.path);
+      }
+
       return { success: true, path: result.path };
     },
     {
@@ -603,6 +608,21 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
         set.status = 400;
       }
 
+      if (result.success && Array.isArray(result.results)) {
+        await Promise.all(
+          result.results
+            .filter(
+              (entry) => entry.success && entry.source && entry.destination
+            )
+            .map((entry) =>
+              virtualFolderService.handlePathChange(
+                entry.source as string,
+                entry.destination as string
+              )
+            )
+        );
+      }
+
       return result;
     },
     {
@@ -635,6 +655,14 @@ export const fileRoutes = new Elysia({ prefix: "/files" })
       }
 
       const result = await fileService.delete(paths);
+
+      if (result.success) {
+        await Promise.all(
+          paths.map((path: string) =>
+            virtualFolderService.handlePathChange(path)
+          )
+        );
+      }
 
       // Clean up thumbnails for deleted files
       for (const path of paths) {

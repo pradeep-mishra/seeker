@@ -17,7 +17,7 @@ import {
   X
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { buildUploadItemsFromFileList } from "../../lib/uploadUtils";
 import { useFileUpload } from "../../lib/useFileUpload";
 import { useAuthStore } from "../../stores/authStore";
@@ -27,6 +27,7 @@ import { useUIStore } from "../../stores/uiStore";
 export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { user, logout, isAuthenticated } = useAuthStore();
   const {
     viewMode,
@@ -48,6 +49,7 @@ export function Header() {
   // Check if we're on the browse page
   const isBrowsePage =
     location.pathname === "/" || location.pathname.startsWith("/browse");
+  const isVirtualView = isBrowsePage && Boolean(searchParams.get("virtual"));
 
   const [searchQuery, setSearchQuery] = useState("");
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -92,6 +94,11 @@ export function Header() {
     // Only run if we're on browse page
     if (!isBrowsePage) return;
 
+    if (isVirtualView) {
+      setStoreSearchQuery(searchQuery);
+      return;
+    }
+
     // Clear search if query is empty
     if (!searchQuery.trim()) {
       setStoreSearchQuery("");
@@ -109,21 +116,31 @@ export function Header() {
 
     // Cleanup timeout on query change
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, isBrowsePage, setStoreSearchQuery, loadFiles]);
+  }, [
+    searchQuery,
+    isBrowsePage,
+    isVirtualView,
+    setStoreSearchQuery,
+    loadFiles
+  ]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     // Form submission triggers immediate search
     if (searchQuery.trim()) {
       setStoreSearchQuery(searchQuery);
-      loadFiles();
+      if (!isVirtualView) {
+        loadFiles();
+      }
     }
   };
 
   const handleClearSearch = () => {
     setSearchQuery("");
     setStoreSearchQuery("");
-    loadFiles();
+    if (!isVirtualView) {
+      loadFiles();
+    }
   };
 
   const handleLogout = async () => {
@@ -275,8 +292,8 @@ export function Header() {
         </div>
       )}
 
-      {/* Upload button - only on browse page */}
-      {isBrowsePage && (
+      {/* Upload button - only on browse page and hidden in virtual view */}
+      {isBrowsePage && !isVirtualView && (
         <div className="relative" ref={uploadMenuRef}>
           <input
             ref={fileInputRef}

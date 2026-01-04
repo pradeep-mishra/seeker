@@ -16,6 +16,7 @@ interface FileListContainerProps {
   onMouseDown: (e: React.MouseEvent) => void;
   onCreateFolder: () => void;
   searchQuery?: string;
+  emptyVariant?: "default" | "virtual";
 }
 
 export function FileListContainer({
@@ -28,12 +29,13 @@ export function FileListContainer({
   onContextMenu,
   onMouseDown,
   onCreateFolder,
-  searchQuery
+  searchQuery,
+  emptyVariant = "default"
 }: FileListContainerProps) {
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-y-auto overflow-x-hidden p-4 relative"
+      className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden p-4 relative"
       onContextMenu={onContextMenu}
       onMouseDown={onMouseDown}>
       {isLoading && files.length === 0 ? (
@@ -44,13 +46,15 @@ export function FileListContainer({
         <EmptyFolderState
           onCreateFolder={onCreateFolder}
           searchQuery={searchQuery}
+          variant={emptyVariant}
         />
       ) : (
         <>
-          {viewMode === "list" && <FileListView files={files} />}
-          {viewMode === "thumbnail" && <FileThumbnailView files={files} />}
-          {viewMode === "card" && <FileCardView files={files} />}
-
+          <div className="flex-1 relative">
+            {viewMode === "list" && <FileListView files={files} />}
+            {viewMode === "thumbnail" && <FileThumbnailView files={files} />}
+            {viewMode === "card" && <FileCardView files={files} />}
+          </div>
           {/* Infinite scroll trigger and loading indicator */}
           {hasMore && (
             <div

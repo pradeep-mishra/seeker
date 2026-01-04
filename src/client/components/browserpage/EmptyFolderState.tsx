@@ -4,11 +4,13 @@ import { Button } from "../common/Button";
 interface EmptyFolderStateProps {
   onCreateFolder: () => void;
   searchQuery?: string;
+  variant?: "default" | "virtual";
 }
 
 export function EmptyFolderState({
   onCreateFolder,
-  searchQuery
+  searchQuery,
+  variant = "default"
 }: EmptyFolderStateProps) {
   // Show different UI when search returns no results
   if (searchQuery) {
@@ -22,6 +24,21 @@ export function EmptyFolderState({
           No files match your search
         </p>
         <p className="text-sm text-content-tertiary">"{searchQuery}"</p>
+      </div>
+    );
+  }
+
+  if (variant === "virtual") {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center">
+        <Folder className="h-16 w-16 text-content-tertiary mb-4" />
+        <h3 className="text-lg font-medium text-content mb-1">
+          Virtual folder is empty
+        </h3>
+        <p className="text-content-secondary max-w-sm">
+          Use the context menu or action bar to add files and folders from
+          anywhere.
+        </p>
       </div>
     );
   }

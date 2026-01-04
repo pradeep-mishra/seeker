@@ -1,6 +1,6 @@
 import { File, FileText, Folder, Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type { FileItem } from "../../lib/api";
 import { filesApi } from "../../lib/api";
 import {
@@ -13,9 +13,11 @@ import {
   isTextFile,
   isVideo
 } from "../../lib/utils";
+import { isVirtualFileItem } from "../../lib/virtualFolderUtils";
 import { useFileStore } from "../../stores/fileStore";
 import { useSelectionStore } from "../../stores/selectionStore";
 import { useUIStore } from "../../stores/uiStore";
+import { useVirtualFolderStore } from "../../stores/virtualFolderStore";
 
 interface FileCardViewProps {
   files: FileItem[];
@@ -23,9 +25,11 @@ interface FileCardViewProps {
 
 export function FileCardView({ files }: FileCardViewProps) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { navigateToPath } = useFileStore();
   const { select, toggleSelect, rangeSelect, isSelected } = useSelectionStore();
   const { openContextMenu } = useUIStore();
+  const { setActiveCollection } = useVirtualFolderStore();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -57,6 +61,13 @@ export function FileCardView({ files }: FileCardViewProps) {
   const handleDoubleClick = useCallback(
     (item: FileItem) => {
       if (item.isDirectory) {
+        if (isVirtualFileItem(item)) {
+          const nextParams = new URLSearchParams(searchParams);
+          nextParams.set("path", encodeURIComponent(item.path));
+          nextParams.delete("virtual");
+          setSearchParams(nextParams);
+          setActiveCollection(null);
+        }
         navigateToPath(item.path);
       } else if (isTextFile(item.mimeType, item.extension, item.name)) {
         navigate(`/editor?path=${encodeURIComponent(item.path)}`);
@@ -68,7 +79,13 @@ export function FileCardView({ files }: FileCardViewProps) {
         window.open(filesApi.download(item.path), "_blank");
       }
     },
-    [navigateToPath, navigate]
+    [
+      navigateToPath,
+      navigate,
+      searchParams,
+      setSearchParams,
+      setActiveCollection
+    ]
   );
 
   const handleContextMenu = useCallback(

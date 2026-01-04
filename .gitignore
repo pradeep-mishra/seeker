@@ -72,3 +72,7 @@ temp
 
 # Drizzle
 drizzle/*.sql
+
+src/server/db/migrations/*
+
+TODO.md

@@ -19,7 +19,7 @@ A modern, native-feeling web-based file browser for home servers. Seeker provide
 
 ### Authentication & Security
 
-- **Multi-user Support** - Create multiple user accounts with role-based access
+- **Multi-user Support** - Create multiple user accounts
 - **Admin Controls** - Admin users can manage mounts and other users
 - **Secure Sessions** - HTTP-only cookie authentication with Argon2id password hashing
 - **First-run Setup** - Guided setup for first-time installation
@@ -37,8 +37,7 @@ A modern, native-feeling web-based file browser for home servers. Seeker provide
 - **Bookmarks** - Pin frequently accessed folders for quick access
 - **Recent Locations** - Track recently visited directories
 - **Virtual Folders** - Build collections of files from multiple mounts without moving them
-- **Search** - Search files by name with optional recursive search
-- **Sorting** - Sort by name, date, size, or type (ascending/descending)
+- **Search** - Search files by name
 - **Hidden Files** - Toggle visibility of hidden files (dotfiles)
 
 ### Media Support
@@ -48,7 +47,6 @@ A modern, native-feeling web-based file browser for home servers. Seeker provide
 - **Next/Previous Navigation** - Browse through images and videos using keyboard arrows or on-screen controls
 - **Image Thumbnails** - Automatic thumbnail generation for images
 - **PDF Thumbnails** - Automatic thumbnail generation for PDF documents
-- **Thumbnail Caching** - Cached thumbnails in separate database for performance
 - **Supported Formats** - Images: JPEG, PNG, GIF, WebP, SVG | Videos: MP4, WebM, MOV
 
 ### Storage Management
@@ -61,12 +59,11 @@ A modern, native-feeling web-based file browser for home servers. Seeker provide
 
 ### Built-in Text Editor
 
-Seeker includes a powerful CodeMirror-powered text editor with syntax highlighting:
+Seeker includes a powerful text editor with syntax highlighting:
 
 - **Supported Formats**: JSON, YAML, YML, ENV, TXT, MD, JS, TS, JSX, TSX, CSS, HTML, XML, and more
 - **Syntax Highlighting**: Language-specific highlighting for better code readability
 - **Direct Editing**: Edit files in-place without downloading
-- **Direct-save**: Changes are saved directly to your files
 - **Line Numbers**: Easy navigation with line numbering
 
 Simply click on any text file to open it in the editor.
@@ -76,8 +73,8 @@ Simply click on any text file to open it in the editor.
 Create smart collections without duplicating files:
 
 - **Cross-Mount Collections**: Add files and folders from any mount into a single virtual folder
-- **Non-Destructive**: Items stay in their original locations; virtual folders store references only
-- **Flexible Management**: Create, rename, reorder, and delete collections without touching your filesystem
+- **Non-Destructive**: Items stay in their original locations. virtual folders store references only
+- **Flexible Management**: Create, rename, and delete collections without touching your filesystem
 - **Easy Adding/Removing**: Use multi-select actions or context menus to manage membership quickly
 
 ### Image Preview
@@ -88,7 +85,7 @@ View your images with advanced preview capabilities:
 - **Zoom Controls**: Zoom in and out for detailed inspection
 - **Pan Support**: Navigate around zoomed images
 - **Next/Previous Navigation**: Quickly browse through images using keyboard arrows or on-screen controls
-- **Supported Formats**: JPEG, PNG, GIF, WebP, SVG, and more
+- **Supported Formats**: JPEG, PNG, WebP, SVG, and more
 - **Fast Loading**: Optimized image delivery
 - **Seamless Browsing**: Navigate through all images in a folder without returning to the file list
 
@@ -100,7 +97,6 @@ Watch your videos with a professional video player powered by Vidstack:
 - **Full Controls**: Play, pause, seek, volume, fullscreen, and picture-in-picture
 - **Streaming Support**: Efficient range request streaming for smooth playback and seeking
 - **Format Support**: MP4, WebM, MOV (QuickTime), and other browser-supported formats
-- **Keyboard Shortcuts**: Space to play/pause, arrow keys for seeking, M to mute, F for fullscreen
 - **Next/Previous Navigation**: Browse through all videos in a folder seamlessly
 - **Mobile-Friendly**: Touch gestures and inline playback on mobile devices
 - **Quality Auto-Detection**: Automatic format compatibility warnings for unsupported codecs
@@ -191,7 +187,7 @@ On first access, you'll be prompted to create an admin account.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/seeker.git
+git clone https://github.com/pradeep-mishra/seeker.git
 cd seeker
 ```
 

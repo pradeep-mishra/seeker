@@ -226,7 +226,7 @@ bun run build
 | `HOST`          | `0.0.0.0`     | Server host                               |
 | `NODE_ENV`      | `development` | Environment mode                          |
 | `CONFIG_PATH`   | `/config`     | Path to store databases and config        |
-| `DEFAULT_MOUNT` | -             | Auto-configure this path as default mount |
+| `DEFAULT_MOUNT` | `/data`       | Auto-configure this path as default mount |
 
 ### Docker Volumes
 
